@@ -1,5 +1,5 @@
-setwd("D:/STAT_App_Data_Mining/Project")
-pData= read.table("adult.data",sep = ",",header = F)
+setwd("~/Projects/Income-Prediction-Model")
+pData= read.table("Data/adult.data",sep = ",",header = F)
 colnames(pData)= c("age","Wcls","fnlwt","edu","eduNum","marStat","ocupp","relation","race","sex","capGain","capLoss","hperW","nCountry","sal")
 dim(pData)
 names(pData)
