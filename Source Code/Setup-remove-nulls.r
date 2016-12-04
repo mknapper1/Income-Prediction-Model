@@ -17,6 +17,11 @@ adult.data = read.csv('Data/adult.data.csv', header=F)
 # Set the column names
 colnames(adult.data) = c('age','workclass','fnlwgt','education','educationNum','maritalStatus','occupation','relationship','race','sex','capitalGain','capitalLoss','hoursPerWeek','nativeCountry','income')
 
+dim(adult.data)
+
+is.na(adult.data) = adult.data=='?'
+is.na(adult.data) = adult.data==' ?'
+adult.data = na.omit(adult.data)
 
 # Remove the fnlwgt column
 adult.data = subset(adult.data, select = -fnlwgt)
@@ -61,13 +66,11 @@ adult.data = within(adult.data, {
 	income = ifelse(income ==  ' >50K', 1, 0)
 })
 
-is.na(adult.data) = adult.data=='?'
-is.na(adult.data) = adult.data==' ?'
-adult.data = na.omit(adult.data)
-
 
 # Display first 5 rows to verify everything looks like it should
 adult.data[0:5,]
+
+dim(adult.data)
 
 
 ###########################
@@ -80,6 +83,8 @@ adult.test = read.csv('Data/adult.test.csv')
 
 # Set the test column names
 colnames(adult.test) = c('age','workclass','fnlwgt','education','educationNum','maritalStatus','occupation','relationship','race','sex','capitalGain','capitalLoss','hoursPerWeek','nativeCountry','income')
+
+dim(adult.test)
 
 is.na(adult.test) = adult.test=='?'
 is.na(adult.test) = adult.test==' ?'
@@ -131,5 +136,4 @@ adult.test = within(adult.test, {
 
 # Display first 5 rows to verify everything looks like it should
 adult.test[0:5,]
-
-names(adult.data)
+dim(adult.test)

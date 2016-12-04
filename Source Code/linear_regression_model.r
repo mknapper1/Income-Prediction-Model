@@ -1,5 +1,7 @@
 # linear regression using random variable selected by me
-adult.poly = lm(income~education+workclass+maritalStatus+race+sex, data=adult.data)
+adult.poly = lm(income~education+workclass+maritalStatus+race+sex+poly(educationNum,8)+poly(hoursPerWeek,8), data=adult.data)
+
+summary(adult.poly)
 
 # do the prediction
 yhat = predict(adult.poly,adult.test)
