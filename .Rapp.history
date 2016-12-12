@@ -1,0 +1,2898 @@
+lm.fit=lm(data.train + poly(data.train))
+^2
+lm.fit=lm(data.train + poly(data.train^2))
+plot(lm.fit)
+summery(lm.fit)
+summary(lm.fit)
+data.train = data.frame(head(x,100), head(y,100))
+data.test = data.frame(tail(x,100), tail(y,100))
+lm.fit=lm(data.train + poly(data.train^2))
+summary(lm.fit)
+?lm
+names(data.train)
+names(data.train)=c('x','y')
+names(data.train)
+lm.fit=lm(y ~ x, data=data.train)
+summary(lm.fit)
+lm.fit2=lm(y ~ x + poly(x^2), data=data.train)
+lm.fit2=lm(y ~ x + poly(x^5), data=data.train)
+lm.fit3=lm(y ~ x + poly(x^10), data=data.train)
+summary(lm.fit3)
+summary(lm.fit)
+summary(lm.fit2)
+?predict
+predict(lm.fit, data.train)
+lm.fit2=lm(y ~ x + poly(x^2) + poly(x^3) + poly(x^4) + poly(x^5), data=data.train)
+summary(lm.fit2)
+lm.fit3=lm(y ~ x + poly(x^2) + poly(x^3) + poly(x^4) + poly(x^5) + poly(x^6) + poly(x^7) + poly(x^8) + poly(x^9) + poly(x^10), data=data.train)
+summary(lm.fit3)
+library(ISLR)#
+fix(Hitters)#
+names(Hitters)#
+dim(Hitters)#
+#is.na identify missing observations#
+sum(is.na(Hitters$Salary)) #the number of players with missings on Salary
+Hitters=na.omit(Hitters) #remove all of rows that have missing values in any variable#
+dim(Hitters)#
+sum(is.na(Hitters))#
+library(leaps)
+regfit.full=regsubsets(Salary~.,Hitters) #perform best subset selection using RSS#
+summary(regfit.full) #return the best eight-variable model
+regfit.full=regsubsets(Salary~.,data=Hitters,nvmax=19) #return the best 19-variable model
+reg.summary=summary(regfit.full)
+names(reg.summary) #return various results...
+reg.summary$rsq #return R^2
+par(mfrow=c(2,2))
+plot(reg.summary$rss,xlab="Number of Variables",ylab="RSS",type="l") #Residual sum squared
+plot(reg.summary$adjr2,xlab="Number of Variables",ylab="Adjusted RSq",type="l") #Adjusted R^2
+summary(regfit.full) #return the best eight-variable model
+names(reg.summary) #return various results...
+which.max(reg.summary$adjr2) #return an index for the minimum of ajusted R^2
+points(11,reg.summary$adjr2[11], col="red",cex=2,pch=20)
+plot(reg.summary$cp,xlab="Number of Variables",ylab="Cp",type='l') #Cp
+which.min(reg.summary$cp)
+points(10,reg.summary$cp[10],col="red",cex=2,pch=20)
+plot(reg.summary$bic,xlab="Number of Variables",ylab="BIC",type='l') #BIC
+which.min(reg.summary$bic)
+points(6,reg.summary$bic[6],col="red",cex=2,pch=20)
+coef(regfit.full,6) #return the coefficient estimates associated with the best 6-variablemodel
+regfit.fwd=regsubsets(Salary~.,data=Hitters,nvmax=19,method="forward") #Forward stepwise selection#
+summary(regfit.fwd)#
+regfit.bwd=regsubsets(Salary~.,data=Hitters,nvmax=19,method="backward") #Backward stepwise selection#
+summary(regfit.bwd)#
+coef(regfit.full,7)#
+coef(regfit.fwd,7)#
+coef(regfit.bwd,7)
+regsubsets
+help(regsubsets)
+regfit.exhaustive=regsubsets(Salary~.,data=Hitters,nvmax=19,method="exhaustive") #Backward stepwise selection#
+summary(regfit.exhaustive)#
+regfit.seqrep=regsubsets(Salary~.,data=Hitters,nvmax=19,method="seqrep") #Backward stepwise selection#
+summary(regfit.seqrep)
+set.seed(1)#
+train=sample(c(TRUE,FALSE), nrow(Hitters),rep=TRUE)#
+test=(!train)#
+regfit.best=regsubsets(Salary~.,data=Hitters[train,],nvmax=19) #perform best subset selection to the training set#
+test.mat=model.matrix(Salary~.,data=Hitters[test,]) #make a model matrix from the test data#
+val.errors=rep(NA,19) #compute the validation set error for the best model for each model size#
+for(i in 1:19){#
+   coefi=coef(regfit.best,id=i) #extract the coefficients from regfit.best for the best model of that size 'i'#
+#there is no predict() to return the predicted response#
+   pred=test.mat[,names(coefi)]%*%coefi #compute the predicted salary #
+   val.errors[i]=mean((Hitters$Salary[test]-pred)^2) #compute the test MSE by comparing the true salary with the predicted one#
+}#
+val.errors #
+which.min(val.errors) #find the best model's index#
+coef(regfit.best,10) #return the coefficient of the best model
+which.min(val.errors) #find the best model's index
+coef(regfit.best,10) #return the coefficient of the best model
+k=10 #10-fold CV#
+set.seed(1)#
+folds=sample(1:k,nrow(Hitters),replace=TRUE) #not equally spacted#
+folds=sample(c(rep(1:10,each=26),1,2,3),nrow(Hitters)) #almost equally spaced#
+cv.errors=matrix(NA,k,19, dimnames=list(NULL, paste(1:19)))#
+for(j in 1:k){#
+  best.fit=regsubsets(Salary~.,data=Hitters[folds!=j,],nvmax=19)#
+  for(i in 1:19){#
+    pred=predict(best.fit,Hitters[folds==j,],id=i)#
+    cv.errors[j,i]=mean( (Hitters$Salary[folds==j]-pred)^2)#
+    }#
+  }#
+mean.cv.errors=apply(cv.errors,2,mean) #average over the columns#
+mean.cv.errors
+regfit.best=regsubsets(Salary~.,data=Hitters,nvmax=19) #finally perform best subset selection on the full data#
+coef(regfit.best,10) #return more accurate coefficient estimates, and it would be different from the one using the training data#
+k=10 #10-fold CV#
+set.seed(1)#
+folds=sample(1:k,nrow(Hitters),replace=TRUE) #not equally spacted#
+folds=sample(c(rep(1:10,each=26),1,2,3),nrow(Hitters)) #almost equally spaced#
+cv.errors=matrix(NA,k,19, dimnames=list(NULL, paste(1:19)))#
+for(j in 1:k){#
+  best.fit=regsubsets(Salary~.,data=Hitters[folds!=j,],nvmax=19)#
+  for(i in 1:19){#
+    pred=predict(best.fit,Hitters[folds==j,],id=i)#
+    cv.errors[j,i]=mean( (Hitters$Salary[folds==j]-pred)^2)#
+    }#
+  }#
+mean.cv.errors=apply(cv.errors,2,mean) #average over the columns#
+mean.cv.errors
+which.min(mean.cv.errors)#
+par(mfrow=c(1,1))#
+plot(mean.cv.errors,type='b')#
+points(11,mean.cv.errors[11],col="red",cex=2,pch=20)#
+reg.best=regsubsets(Salary~.,data=Hitters, nvmax=19) #
+coef(reg.best,11) #obtain the best subset selecdtion on the full data and obtain the coefficient estimates of the 11-variable model
+#write our own predict method#
+predict.regsubsets=function(object,newdata,id,...){#
+  form=as.formula(object$call[[2]])#
+  mat=model.matrix(form,newdata)#
+  coefi=coef(object,id=id)#
+  xvars=names(coefi)#
+  mat[,xvars]%*%coefi#
+  }
+egfit.best=regsubsets(Salary~.,data=Hitters,nvmax=19) #finally perform best subset selection on the full data#
+coef(regfit.best,10) #return more accurate coefficient estimates, and it would be different from the one using the training data#
+k=10 #10-fold CV#
+set.seed(1)#
+folds=sample(1:k,nrow(Hitters),replace=TRUE) #not equally spacted#
+folds=sample(c(rep(1:10,each=26),1,2,3),nrow(Hitters)) #almost equally spaced#
+cv.errors=matrix(NA,k,19, dimnames=list(NULL, paste(1:19)))#
+for(j in 1:k){#
+  best.fit=regsubsets(Salary~.,data=Hitters[folds!=j,],nvmax=19)#
+  for(i in 1:19){#
+    pred=predict(best.fit,Hitters[folds==j,],id=i)#
+    cv.errors[j,i]=mean( (Hitters$Salary[folds==j]-pred)^2)#
+    }#
+  }
+mean.cv.errors=apply(cv.errors,2,mean) #average over the columns#
+mean.cv.errors#
+which.min(mean.cv.errors)
+which.min(mean.cv.errors)#
+par(mfrow=c(1,1))#
+plot(mean.cv.errors,type='b')#
+points(11,mean.cv.errors[11],col="red",cex=2,pch=20)#
+reg.best=regsubsets(Salary~.,data=Hitters, nvmax=19) #
+coef(reg.best,11) #obtain the best subset selecdtion on the full data and obtain the coefficient estimates of the 11-variable model
+cv.errors
+help(apply)
+mean.cv.errors=apply(cv.errors,2,mean) #average over the columns#
+mean.cv.errors#
+which.min(mean.cv.errors)#
+par(mfrow=c(1,1))#
+plot(mean.cv.errors,type='b')#
+points(10,mean.cv.errors[10],col="red",cex=2,pch=20)#
+reg.best=regsubsets(Salary~.,data=Hitters, nvmax=19) #
+coef(reg.best,10) #obtain the best subset selecdtion on the full data and obtain the coefficient estimates of the 11-variable model
+mean.cv.errors=apply(cv.errors,2,mean) #average over the columns#
+mean.cv.errors#
+which.min(mean.cv.errors)#
+par(mfrow=c(1,1))#
+plot(mean.cv.errors,type='b')#
+points(11,mean.cv.errors[11],col="red",cex=2,pch=20)#
+reg.best=regsubsets(Salary~.,data=Hitters, nvmax=19) #
+coef(reg.best,11) #obtain the best subset selecdtion on the full data and obtain the coefficient estimates of the 11-variable model
+x=model.matrix(Salary~.,Hitters)[,-1] #produce a matrix corresponding to 19 predictors#
+y=Hitters$Salary
+x=model.matrix(Salary~.,Hitters)[,-20] #produce a matrix corresponding to 19 predictors#
+y=Hitters$Salary
+library(glmnet)
+setwd("~/Projects/Income-Prediction-Model")#
+pData= read.table("Data/adult.data",sep = ",",header = F)#
+colnames(pData)= c("age","Wcls","fnlwt","edu","eduNum","marStat","ocupp","relation","race","sex","capGain","capLoss","hperW","nCountry","sal")#
+dim(pData)#
+names(pData)#
+str(pData)#
+cor(pData)#
+attach(pData)#
+contrasts(sal)#
+pData$sal <- factor(pData$sal,levels = c(1,2), labels = c("L", "H")) #
+#### Logistic Refression #######################
+sal01 =rep(0,length(sal))#
+sal01[levels(sal)==2]= 1  # <=50K#
+sal01[1:20]#
+glm.fit=glm(sal01~age+fnlwt+edu+eduNum+capGain+capLoss+hperW+sex#
+  +race+Wcls+marStat+relation+ocupp,data=pData,family="binomial")#
+#
+glm.probs=predict(glm.fit,type="response")#
+glm.probs[1:10]#
+#
+glm.pred=rep(0,length(sal))#
+glm.pred[glm.probs> .5]=1#
+salDirection =  rep(0, length(sal))#
+salDirection[sal01==1] = 1#
+table(glm.pred,salDirection)#
+mean(glm.pred!=salDirection)
+table(adult.data$education)
+############################
+##    SETUP PROJECT     ####
+############################
+#
+# Set the project directory#
+path_to_project = '~/Projects/Income-Prediction-Model'#
+setwd(path_to_project)#
+############################
+## SETUP TRAINING DATA  ####
+############################
+#
+# Read the training data#
+adult.data = read.csv('Data/adult.data.csv', header=F)#
+#
+# Set the column names#
+colnames(adult.data) = c('age','workclass','fnlwgt','education','education-num','maritalStatus','occupation','relationship','race','sex','capitalGain','capitalLoss','hoursPerWeek','nativeCountry','income')#
+#
+# Remove the fnlwgt column#
+adult.data = subset(adult.data, select = -fnlwgt)#
+#
+# Combine workclass groups#
+adult.data$workclass = gsub("Self-emp-inc","Self-emp",adult.data$workclass)#
+adult.data$workclass = gsub("Self-emp-not-inc","Self-emp",adult.data$workclass)#
+adult.data$workclass = gsub("Never-worked","Not-working",adult.data$workclass)#
+adult.data$workclass = gsub("Without-pay","Not-working",adult.data$workclass)#
+adult.data$workclass = gsub("State-gov","Small-gov",adult.data$workclass)#
+adult.data$workclass = gsub("Local-gov","Small-gov",adult.data$workclass)#
+table(adult.data$workclass)#
+#
+# Combine education groups#
+adult.data$education = gsub("Preschool","Dropout",adult.data$education)#
+adult.data$education = gsub("1st-4th","Dropout",adult.data$education)#
+adult.data$education = gsub("5th-6th","Dropout",adult.data$education)#
+adult.data$education = gsub("7th-8th","Dropout",adult.data$education)#
+adult.data$education = gsub("9th","Dropout",adult.data$education)#
+adult.data$education = gsub("10th","Dropout",adult.data$education)#
+adult.data$education = gsub("11th","Dropout",adult.data$education)#
+adult.data$education = gsub("12th","Dropout",adult.data$education)#
+adult.data$education = gsub("HS-grad","HS-grad",adult.data$education)#
+adult.data$education = gsub("Some-college","HS-grad",adult.data$education)#
+adult.data$education = gsub("Assoc-acdm","Assoc",adult.data$education)#
+adult.data$education = gsub("Assoc-voc","Assoc",adult.data$education)#
+table(adult.data$education)#
+#
+# Combine marital status groups#
+adult.data$maritalStatus = gsub("Married-AF-spouse","Married",adult.data$maritalStatus)#
+adult.data$maritalStatus = gsub("Married-civ-spouse","Married",adult.data$maritalStatus)#
+adult.data$maritalStatus = gsub("Married-spouse-absent","Not-married",adult.data$maritalStatus)#
+adult.data$maritalStatus = gsub("Separated","Not-married",adult.data$maritalStatus)#
+adult.data$maritalStatus = gsub("Divorced","Not-married",adult.data$maritalStatus)#
+table(adult.data$maritalStatus)#
+#
+table(adult.data$occupation)#
+# make the income data easier to work with#
+adult.data = within(adult.data, {#
+	income = ifelse(income ==  ' >50K', 1, 0)#
+})#
+# Display first 5 rows to verify everything looks like it should#
+adult.data[0:5,]#
+############################
+###   SETUP TEST DATA  #####
+############################
+# Read the test data#
+adult.test = read.csv('Data/adult.test.csv')#
+#
+# Set the test column names#
+colnames(adult.test) = c('age','workclass','fnlwgt','education','education-num','maritalStatus','occupation','relationship','race','sex','capitalGain','capitalLoss','hoursPerWeek','nativeCountry','income')#
+#
+# Remove the fnlwgt column#
+adult.test = subset(adult.test, select = -fnlwgt)#
+#
+# Combine workclass groups#
+adult.test$workclass = gsub("Self-emp-inc","Self-emp",adult.test$workclass)#
+adult.test$workclass = gsub("Self-emp-not-inc","Self-emp",adult.test$workclass)#
+adult.test$workclass = gsub("Never-worked","Not-working",adult.test$workclass)#
+adult.test$workclass = gsub("Without-pay","Not-working",adult.test$workclass)#
+adult.test$workclass = gsub("State-gov","Small-gov",adult.test$workclass)#
+adult.test$workclass = gsub("Local-gov","Small-gov",adult.test$workclass)#
+table(adult.test$workclass)#
+#
+# Combine education groups#
+adult.test$education = gsub("Preschool","Dropout",adult.test$education)#
+adult.test$education = gsub("1st-4th","Dropout",adult.test$education)#
+adult.test$education = gsub("5th-6th","Dropout",adult.test$education)#
+adult.test$education = gsub("7th-8th","Dropout",adult.test$education)#
+adult.test$education = gsub("9th","Dropout",adult.test$education)#
+adult.test$education = gsub("10th","Dropout",adult.test$education)#
+adult.test$education = gsub("11th","Dropout",adult.test$education)#
+adult.test$education = gsub("12th","Dropout",adult.test$education)#
+adult.test$education = gsub("HS-grad","HS-grad",adult.test$education)#
+adult.test$education = gsub("Some-college","HS-grad",adult.test$education)#
+adult.test$education = gsub("Assoc-acdm","Assoc",adult.test$education)#
+adult.test$education = gsub("Assoc-voc","Assoc",adult.test$education)#
+table(adult.test$education)#
+#
+# Combine marital status groups#
+adult.test$maritalStatus = gsub("Married-AF-spouse","Married",adult.test$maritalStatus)#
+adult.test$maritalStatus = gsub("Married-civ-spouse","Married",adult.test$maritalStatus)#
+adult.test$maritalStatus = gsub("Married-spouse-absent","Not-married",adult.test$maritalStatus)#
+adult.test$maritalStatus = gsub("Separated","Not-married",adult.test$maritalStatus)#
+adult.test$maritalStatus = gsub("Divorced","Not-married",adult.test$maritalStatus)#
+table(adult.test$maritalStatus)#
+#
+table(adult.test$occupation)#
+# make the test data easier to work with#
+adult.test = within(adult.test, {#
+	income = ifelse(income ==  ' >50K.', 1, 0)#
+})#
+#
+# Display first 5 rows to verify everything looks like it should#
+adult.test[0:5,]
+############################
+##    SETUP PROJECT     ####
+############################
+#
+# Set the project directory#
+path_to_project = '~/Projects/Income-Prediction-Model'#
+setwd(path_to_project)#
+############################
+## SETUP TRAINING DATA  ####
+############################
+#
+# Read the training data#
+adult.data = read.csv('Data/adult.data.csv', header=F)#
+#
+# Set the column names#
+colnames(adult.data) = c('age','workclass','fnlwgt','education','education-num','maritalStatus','occupation','relationship','race','sex','capitalGain','capitalLoss','hoursPerWeek','nativeCountry','income')#
+#
+# Remove the fnlwgt column#
+adult.data = subset(adult.data, select = -fnlwgt)#
+#
+# Combine workclass groups#
+adult.data$workclass = gsub("Self-emp-inc","Self-emp",adult.data$workclass)#
+adult.data$workclass = gsub("Self-emp-not-inc","Self-emp",adult.data$workclass)#
+adult.data$workclass = gsub("Never-worked","Not-working",adult.data$workclass)#
+adult.data$workclass = gsub("Without-pay","Not-working",adult.data$workclass)#
+adult.data$workclass = gsub("State-gov","Small-gov",adult.data$workclass)#
+adult.data$workclass = gsub("Local-gov","Small-gov",adult.data$workclass)#
+table(adult.data$workclass)#
+#
+# Combine education groups#
+adult.data$education = gsub("Preschool","Dropout",adult.data$education)#
+adult.data$education = gsub("1st-4th","Dropout",adult.data$education)#
+adult.data$education = gsub("5th-6th","Dropout",adult.data$education)#
+adult.data$education = gsub("7th-8th","Dropout",adult.data$education)#
+adult.data$education = gsub("9th","Dropout",adult.data$education)#
+adult.data$education = gsub("10th","Dropout",adult.data$education)#
+adult.data$education = gsub("11th","Dropout",adult.data$education)#
+adult.data$education = gsub("12th","Dropout",adult.data$education)#
+adult.data$education = gsub("HS-grad","HS-grad",adult.data$education)#
+adult.data$education = gsub("Some-college","HS-grad",adult.data$education)#
+adult.data$education = gsub("Assoc-acdm","Assoc",adult.data$education)#
+adult.data$education = gsub("Assoc-voc","Assoc",adult.data$education)#
+table(adult.data$education)#
+#
+# Combine marital status groups#
+adult.data$maritalStatus = gsub("Married-AF-spouse","Married",adult.data$maritalStatus)#
+adult.data$maritalStatus = gsub("Married-civ-spouse","Married",adult.data$maritalStatus)#
+adult.data$maritalStatus = gsub("Married-spouse-absent","Not-married",adult.data$maritalStatus)#
+adult.data$maritalStatus = gsub("Separated","Not-married",adult.data$maritalStatus)#
+adult.data$maritalStatus = gsub("Divorced","Not-married",adult.data$maritalStatus)#
+table(adult.data$maritalStatus)#
+#
+table(adult.data$occupation)#
+# make the income data easier to work with#
+adult.data = within(adult.data, {#
+	income = ifelse(income ==  ' >50K', 1, 0)#
+})#
+# Display first 5 rows to verify everything looks like it should#
+adult.data[0:5,]#
+############################
+###   SETUP TEST DATA  #####
+############################
+# Read the test data#
+adult.test = read.csv('Data/adult.test.csv')#
+#
+# Set the test column names#
+colnames(adult.test) = c('age','workclass','fnlwgt','education','education-num','maritalStatus','occupation','relationship','race','sex','capitalGain','capitalLoss','hoursPerWeek','nativeCountry','income')#
+#
+# Remove the fnlwgt column#
+adult.test = subset(adult.test, select = -fnlwgt)#
+#
+# Combine workclass groups#
+adult.test$workclass = gsub("Self-emp-inc","Self-emp",adult.test$workclass)#
+adult.test$workclass = gsub("Self-emp-not-inc","Self-emp",adult.test$workclass)#
+adult.test$workclass = gsub("Never-worked","Not-working",adult.test$workclass)#
+adult.test$workclass = gsub("Without-pay","Not-working",adult.test$workclass)#
+adult.test$workclass = gsub("State-gov","Small-gov",adult.test$workclass)#
+adult.test$workclass = gsub("Local-gov","Small-gov",adult.test$workclass)#
+table(adult.test$workclass)#
+#
+# Combine education groups#
+adult.test$education = gsub("Preschool","Dropout",adult.test$education)#
+adult.test$education = gsub("1st-4th","Dropout",adult.test$education)#
+adult.test$education = gsub("5th-6th","Dropout",adult.test$education)#
+adult.test$education = gsub("7th-8th","Dropout",adult.test$education)#
+adult.test$education = gsub("9th","Dropout",adult.test$education)#
+adult.test$education = gsub("10th","Dropout",adult.test$education)#
+adult.test$education = gsub("11th","Dropout",adult.test$education)#
+adult.test$education = gsub("12th","Dropout",adult.test$education)#
+adult.test$education = gsub("HS-grad","HS-grad",adult.test$education)#
+adult.test$education = gsub("Some-college","HS-grad",adult.test$education)#
+adult.test$education = gsub("Assoc-acdm","Assoc",adult.test$education)#
+adult.test$education = gsub("Assoc-voc","Assoc",adult.test$education)#
+table(adult.test$education)#
+#
+# Combine marital status groups#
+adult.test$maritalStatus = gsub("Married-AF-spouse","Married",adult.test$maritalStatus)#
+adult.test$maritalStatus = gsub("Married-civ-spouse","Married",adult.test$maritalStatus)#
+adult.test$maritalStatus = gsub("Married-spouse-absent","Not-married",adult.test$maritalStatus)#
+adult.test$maritalStatus = gsub("Separated","Not-married",adult.test$maritalStatus)#
+adult.test$maritalStatus = gsub("Divorced","Not-married",adult.test$maritalStatus)#
+table(adult.test$maritalStatus)#
+#
+table(adult.test$occupation)#
+# make the test data easier to work with#
+adult.test = within(adult.test, {#
+	income = ifelse(income ==  ' >50K.', 1, 0)#
+})#
+#
+# Display first 5 rows to verify everything looks like it should#
+adult.test[0:5,]
+adult.poly = lm(income~education+workclass+maritalStatus+race+sex, data=adult.data)
+summary(adult.poly)
+yhat = predict(adult.poly,adult.test)
+yhat[1:50,]
+yhat
+yhat = within(yhat, {#
+	yhat = ifelse(yhat >= 0.5 , 1, 0)#
+})
+yhat = ifelse(yhat >= 0.5 , 1, 0)
+yhat
+mean((yhat - adult.test$income) ^ 2)
+# polynomial regression using random variable selected by me#
+adult.poly = lm(income~education, data=adult.data)#
+#
+# do the prediction#
+yhat = predict(adult.poly,adult.test)#
+#
+# if yhat is greater than .5 it is 1 else 0#
+yhat = ifelse(yhat >= 0.5 , 1, 0)#
+#
+# get and display the mse#
+mean((yhat - adult.test$income) ^ 2)
+help(lm)
+# linear regression using random variable selected by me#
+adult.poly = lm(income~education+workclass+maritalStatus+race+sex, data=adult.data)#
+#
+# do the prediction#
+yhat = predict(adult.poly,adult.test)#
+#
+# if yhat is greater than .5 it is 1 else 0#
+yhat = ifelse(yhat >= 0.5 , 1, 0)#
+#
+# get and display the mse#
+mean((yhat - adult.test$income) ^ 2)
+# linear regression using random variable selected by me#
+adult.poly = lm(income~poly(education,3)+poly(workclass,1)+poly(maritalStatus,1)+poly(race,1)+poly(sex,1), data=adult.data)#
+#
+# do the prediction#
+yhat = predict(adult.poly,adult.test)#
+#
+# if yhat is greater than .5 it is 1 else 0#
+yhat = ifelse(yhat >= 0.5 , 1, 0)#
+#
+# get and display the mse#
+mean((yhat - adult.test$income) ^ 2)
+# linear regression using random variable selected by me#
+adult.poly = lm(income~poly(education,1)+poly(workclass,1)+poly(maritalStatus,1)+poly(race,1)+poly(sex,1), data=adult.data)#
+#
+# do the prediction#
+yhat = predict(adult.poly,adult.test)#
+#
+# if yhat is greater than .5 it is 1 else 0#
+yhat = ifelse(yhat >= 0.5 , 1, 0)#
+#
+# get and display the mse#
+mean((yhat - adult.test$income) ^ 2)
+# linear regression using random variable selected by me#
+adult.poly = lm(income~education+workclass+maritalStatus+race, data=adult.data)#
+#
+# do the prediction#
+yhat = predict(adult.poly,adult.test)#
+#
+# if yhat is greater than .5 it is 1 else 0#
+yhat = ifelse(yhat >= 0.5 , 1, 0)#
+#
+# get and display the mse#
+mean((yhat - adult.test$income) ^ 2)
+# linear regression using random variable selected by me#
+adult.poly = lm(income~education+workclass+maritalStatus+sex, data=adult.data)#
+#
+# do the prediction#
+yhat = predict(adult.poly,adult.test)#
+#
+# if yhat is greater than .5 it is 1 else 0#
+yhat = ifelse(yhat >= 0.5 , 1, 0)#
+#
+# get and display the mse#
+mean((yhat - adult.test$income) ^ 2)
+# linear regression using random variable selected by me#
+adult.poly = lm(income~education+workclass+maritalStatus+race+sex, data=adult.data)#
+#
+# do the prediction#
+yhat = predict(adult.poly,adult.test)#
+#
+# if yhat is greater than .5 it is 1 else 0#
+yhat = ifelse(yhat >= 0.5 , 1, 0)#
+#
+# get and display the mse#
+mean((yhat - adult.test$income) ^ 2)
+adult.poly = lm(income~workclass+maritalStatus+race+sex, data=adult.data)
+# linear regression using random variable selected by me#
+adult.poly = lm(income~workclass+maritalStatus+race+sex, data=adult.data)#
+#
+# do the prediction#
+yhat = predict(adult.poly,adult.test)#
+#
+# if yhat is greater than .5 it is 1 else 0#
+yhat = ifelse(yhat >= 0.5 , 1, 0)#
+#
+# get and display the mse#
+mean((yhat - adult.test$income) ^ 2)
+names(adult.data)
+# linear regression using random variable selected by me#
+adult.poly = lm(income~education+workclass+maritalStatus+race+sex+poly(education-num,3), data=adult.data)#
+#
+# do the prediction#
+yhat = predict(adult.poly,adult.test)#
+#
+# if yhat is greater than .5 it is 1 else 0#
+yhat = ifelse(yhat >= 0.5 , 1, 0)#
+#
+# get and display the mse#
+mean((yhat - adult.test$income) ^ 2)
+############################
+##    SETUP PROJECT     ####
+############################
+#
+# Set the project directory#
+path_to_project = '~/Projects/Income-Prediction-Model'#
+setwd(path_to_project)#
+############################
+## SETUP TRAINING DATA  ####
+############################
+#
+# Read the training data#
+adult.data = read.csv('Data/adult.data.csv', header=F)#
+#
+# Set the column names#
+colnames(adult.data) = c('age','workclass','fnlwgt','education','educationNum','maritalStatus','occupation','relationship','race','sex','capitalGain','capitalLoss','hoursPerWeek','nativeCountry','income')#
+#
+# Remove the fnlwgt column#
+adult.data = subset(adult.data, select = -fnlwgt)#
+#
+# Combine workclass groups#
+adult.data$workclass = gsub("Self-emp-inc","Self-emp",adult.data$workclass)#
+adult.data$workclass = gsub("Self-emp-not-inc","Self-emp",adult.data$workclass)#
+adult.data$workclass = gsub("Never-worked","Not-working",adult.data$workclass)#
+adult.data$workclass = gsub("Without-pay","Not-working",adult.data$workclass)#
+adult.data$workclass = gsub("State-gov","Small-gov",adult.data$workclass)#
+adult.data$workclass = gsub("Local-gov","Small-gov",adult.data$workclass)#
+table(adult.data$workclass)#
+#
+# Combine education groups#
+adult.data$education = gsub("Preschool","Dropout",adult.data$education)#
+adult.data$education = gsub("1st-4th","Dropout",adult.data$education)#
+adult.data$education = gsub("5th-6th","Dropout",adult.data$education)#
+adult.data$education = gsub("7th-8th","Dropout",adult.data$education)#
+adult.data$education = gsub("9th","Dropout",adult.data$education)#
+adult.data$education = gsub("10th","Dropout",adult.data$education)#
+adult.data$education = gsub("11th","Dropout",adult.data$education)#
+adult.data$education = gsub("12th","Dropout",adult.data$education)#
+adult.data$education = gsub("HS-grad","HS-grad",adult.data$education)#
+adult.data$education = gsub("Some-college","HS-grad",adult.data$education)#
+adult.data$education = gsub("Assoc-acdm","Assoc",adult.data$education)#
+adult.data$education = gsub("Assoc-voc","Assoc",adult.data$education)#
+table(adult.data$education)#
+#
+# Combine marital status groups#
+adult.data$maritalStatus = gsub("Married-AF-spouse","Married",adult.data$maritalStatus)#
+adult.data$maritalStatus = gsub("Married-civ-spouse","Married",adult.data$maritalStatus)#
+adult.data$maritalStatus = gsub("Married-spouse-absent","Not-married",adult.data$maritalStatus)#
+adult.data$maritalStatus = gsub("Separated","Not-married",adult.data$maritalStatus)#
+adult.data$maritalStatus = gsub("Divorced","Not-married",adult.data$maritalStatus)#
+table(adult.data$maritalStatus)#
+#
+table(adult.data$occupation)#
+# make the income data easier to work with#
+adult.data = within(adult.data, {#
+	income = ifelse(income ==  ' >50K', 1, 0)#
+})#
+# Display first 5 rows to verify everything looks like it should#
+adult.data[0:5,]#
+############################
+###   SETUP TEST DATA  #####
+############################
+# Read the test data#
+adult.test = read.csv('Data/adult.test.csv')#
+#
+# Set the test column names#
+colnames(adult.test) = c('age','workclass','fnlwgt','education','educationNum','maritalStatus','occupation','relationship','race','sex','capitalGain','capitalLoss','hoursPerWeek','nativeCountry','income')#
+#
+# Remove the fnlwgt column#
+adult.test = subset(adult.test, select = -fnlwgt)#
+#
+# Combine workclass groups#
+adult.test$workclass = gsub("Self-emp-inc","Self-emp",adult.test$workclass)#
+adult.test$workclass = gsub("Self-emp-not-inc","Self-emp",adult.test$workclass)#
+adult.test$workclass = gsub("Never-worked","Not-working",adult.test$workclass)#
+adult.test$workclass = gsub("Without-pay","Not-working",adult.test$workclass)#
+adult.test$workclass = gsub("State-gov","Small-gov",adult.test$workclass)#
+adult.test$workclass = gsub("Local-gov","Small-gov",adult.test$workclass)#
+table(adult.test$workclass)#
+#
+# Combine education groups#
+adult.test$education = gsub("Preschool","Dropout",adult.test$education)#
+adult.test$education = gsub("1st-4th","Dropout",adult.test$education)#
+adult.test$education = gsub("5th-6th","Dropout",adult.test$education)#
+adult.test$education = gsub("7th-8th","Dropout",adult.test$education)#
+adult.test$education = gsub("9th","Dropout",adult.test$education)#
+adult.test$education = gsub("10th","Dropout",adult.test$education)#
+adult.test$education = gsub("11th","Dropout",adult.test$education)#
+adult.test$education = gsub("12th","Dropout",adult.test$education)#
+adult.test$education = gsub("HS-grad","HS-grad",adult.test$education)#
+adult.test$education = gsub("Some-college","HS-grad",adult.test$education)#
+adult.test$education = gsub("Assoc-acdm","Assoc",adult.test$education)#
+adult.test$education = gsub("Assoc-voc","Assoc",adult.test$education)#
+table(adult.test$education)#
+#
+# Combine marital status groups#
+adult.test$maritalStatus = gsub("Married-AF-spouse","Married",adult.test$maritalStatus)#
+adult.test$maritalStatus = gsub("Married-civ-spouse","Married",adult.test$maritalStatus)#
+adult.test$maritalStatus = gsub("Married-spouse-absent","Not-married",adult.test$maritalStatus)#
+adult.test$maritalStatus = gsub("Separated","Not-married",adult.test$maritalStatus)#
+adult.test$maritalStatus = gsub("Divorced","Not-married",adult.test$maritalStatus)#
+table(adult.test$maritalStatus)#
+#
+table(adult.test$occupation)#
+# make the test data easier to work with#
+adult.test = within(adult.test, {#
+	income = ifelse(income ==  ' >50K.', 1, 0)#
+})#
+#
+# Display first 5 rows to verify everything looks like it should#
+adult.test[0:5,]#
+#
+names(adult.data)
+# linear regression using random variable selected by me#
+adult.poly = lm(income~education+workclass+maritalStatus+race+sex+poly(education-num,3), data=adult.data)#
+#
+# do the prediction#
+yhat = predict(adult.poly,adult.test)#
+#
+# if yhat is greater than .5 it is 1 else 0#
+yhat = ifelse(yhat >= 0.5 , 1, 0)#
+#
+# get and display the mse#
+mean((yhat - adult.test$income) ^ 2)
+# linear regression using random variable selected by me#
+adult.poly = lm(income~education+workclass+maritalStatus+race+sex+poly(educationNum,3), data=adult.data)#
+#
+# do the prediction#
+yhat = predict(adult.poly,adult.test)#
+#
+# if yhat is greater than .5 it is 1 else 0#
+yhat = ifelse(yhat >= 0.5 , 1, 0)#
+#
+# get and display the mse#
+mean((yhat - adult.test$income) ^ 2)
+# linear regression using random variable selected by me#
+adult.poly = lm(income~education+workclass+maritalStatus+race+sex+poly(educationNum,7), data=adult.data)#
+#
+# do the prediction#
+yhat = predict(adult.poly,adult.test)#
+#
+# if yhat is greater than .5 it is 1 else 0#
+yhat = ifelse(yhat >= 0.5 , 1, 0)#
+#
+# get and display the mse#
+mean((yhat - adult.test$income) ^ 2)
+# linear regression using random variable selected by me#
+adult.poly = lm(income~education+workclass+maritalStatus+race+sex+poly(educationNum,2), data=adult.data)#
+#
+# do the prediction#
+yhat = predict(adult.poly,adult.test)#
+#
+# if yhat is greater than .5 it is 1 else 0#
+yhat = ifelse(yhat >= 0.5 , 1, 0)#
+#
+# get and display the mse#
+mean((yhat - adult.test$income) ^ 2)
+# linear regression using random variable selected by me#
+adult.poly = lm(income~education+workclass+maritalStatus+race+sex+poly(educationNum,1), data=adult.data)#
+#
+# do the prediction#
+yhat = predict(adult.poly,adult.test)#
+#
+# if yhat is greater than .5 it is 1 else 0#
+yhat = ifelse(yhat >= 0.5 , 1, 0)#
+#
+# get and display the mse#
+mean((yhat - adult.test$income) ^ 2)
+# linear regression using random variable selected by me#
+adult.poly = lm(income~education+workclass+maritalStatus+race+sex+poly(educationNum,4), data=adult.data)#
+#
+# do the prediction#
+yhat = predict(adult.poly,adult.test)#
+#
+# if yhat is greater than .5 it is 1 else 0#
+yhat = ifelse(yhat >= 0.5 , 1, 0)#
+#
+# get and display the mse#
+mean((yhat - adult.test$income) ^ 2)
+# linear regression using random variable selected by me#
+adult.poly = lm(income~education+workclass+maritalStatus+race+sex+poly(educationNum,2), data=adult.data)#
+#
+# do the prediction#
+yhat = predict(adult.poly,adult.test)#
+#
+# if yhat is greater than .5 it is 1 else 0#
+yhat = ifelse(yhat >= 0.5 , 1, 0)#
+#
+# get and display the mse#
+mean((yhat - adult.test$income) ^ 2)
+names(adult.data)
+# linear regression using random variable selected by me#
+adult.poly = lm(income~education+workclass+maritalStatus+race+sex+poly(educationNum,2)+poly(hoursPerWeek,2), data=adult.data)#
+#
+# do the prediction#
+yhat = predict(adult.poly,adult.test)#
+#
+# if yhat is greater than .5 it is 1 else 0#
+yhat = ifelse(yhat >= 0.5 , 1, 0)#
+#
+# get and display the mse#
+mean((yhat - adult.test$income) ^ 2)
+# linear regression using random variable selected by me#
+adult.poly = lm(income~education+workclass+maritalStatus+race+sex+poly(educationNum,2)+poly(hoursPerWeek,1), data=adult.data)#
+#
+# do the prediction#
+yhat = predict(adult.poly,adult.test)#
+#
+# if yhat is greater than .5 it is 1 else 0#
+yhat = ifelse(yhat >= 0.5 , 1, 0)#
+#
+# get and display the mse#
+mean((yhat - adult.test$income) ^ 2)
+# linear regression using random variable selected by me#
+adult.poly = lm(income~education+workclass+maritalStatus+race+sex+poly(educationNum,2)+poly(hoursPerWeek,5), data=adult.data)#
+#
+# do the prediction#
+yhat = predict(adult.poly,adult.test)#
+#
+# if yhat is greater than .5 it is 1 else 0#
+yhat = ifelse(yhat >= 0.5 , 1, 0)#
+#
+# get and display the mse#
+mean((yhat - adult.test$income) ^ 2)
+# linear regression using random variable selected by me#
+adult.poly = lm(income~education+workclass+maritalStatus+race+sex+poly(educationNum,2)+poly(hoursPerWeek,6), data=adult.data)#
+#
+# do the prediction#
+yhat = predict(adult.poly,adult.test)#
+#
+# if yhat is greater than .5 it is 1 else 0#
+yhat = ifelse(yhat >= 0.5 , 1, 0)#
+#
+# get and display the mse#
+mean((yhat - adult.test$income) ^ 2)
+# linear regression using random variable selected by me#
+adult.poly = lm(income~education+workclass+maritalStatus+race+sex+poly(educationNum,2)+poly(hoursPerWeek,12), data=adult.data)#
+#
+# do the prediction#
+yhat = predict(adult.poly,adult.test)#
+#
+# if yhat is greater than .5 it is 1 else 0#
+yhat = ifelse(yhat >= 0.5 , 1, 0)#
+#
+# get and display the mse#
+mean((yhat - adult.test$income) ^ 2)
+adult.poly = lm(income~education+workclass+maritalStatus+race+sex+poly(educationNum,2)+poly(hoursPerWeek,11), data=adult.data)
+# linear regression using random variable selected by me#
+adult.poly = lm(income~education+workclass+maritalStatus+race+sex+poly(educationNum,2)+poly(hoursPerWeek,11), data=adult.data)#
+#
+# do the prediction#
+yhat = predict(adult.poly,adult.test)#
+#
+# if yhat is greater than .5 it is 1 else 0#
+yhat = ifelse(yhat >= 0.5 , 1, 0)#
+#
+# get and display the mse#
+mean((yhat - adult.test$income) ^ 2)
+# linear regression using random variable selected by me#
+adult.poly = lm(income~education+workclass+maritalStatus+race+sex+poly(educationNum,2)+poly(hoursPerWeek,10), data=adult.data)#
+#
+# do the prediction#
+yhat = predict(adult.poly,adult.test)#
+#
+# if yhat is greater than .5 it is 1 else 0#
+yhat = ifelse(yhat >= 0.5 , 1, 0)#
+#
+# get and display the mse#
+mean((yhat - adult.test$income) ^ 2)
+# linear regression using random variable selected by me#
+adult.poly = lm(income~education+workclass+maritalStatus+race+sex+poly(educationNum,2)+poly(hoursPerWeek,9), data=adult.data)#
+#
+# do the prediction#
+yhat = predict(adult.poly,adult.test)#
+#
+# if yhat is greater than .5 it is 1 else 0#
+yhat = ifelse(yhat >= 0.5 , 1, 0)#
+#
+# get and display the mse#
+mean((yhat - adult.test$income) ^ 2)
+# linear regression using random variable selected by me#
+adult.poly = lm(income~education+workclass+maritalStatus+race+sex+poly(educationNum,2)+poly(hoursPerWeek,8), data=adult.data)#
+#
+# do the prediction#
+yhat = predict(adult.poly,adult.test)#
+#
+# if yhat is greater than .5 it is 1 else 0#
+yhat = ifelse(yhat >= 0.5 , 1, 0)#
+#
+# get and display the mse#
+mean((yhat - adult.test$income) ^ 2)
+# linear regression using random variable selected by me#
+adult.poly = lm(income~education+workclass+maritalStatus+race+sex+poly(educationNum,2)+poly(hoursPerWeek,7), data=adult.data)#
+#
+# do the prediction#
+yhat = predict(adult.poly,adult.test)#
+#
+# if yhat is greater than .5 it is 1 else 0#
+yhat = ifelse(yhat >= 0.5 , 1, 0)#
+#
+# get and display the mse#
+mean((yhat - adult.test$income) ^ 2)
+############################
+##    SETUP PROJECT     ####
+############################
+#
+# Set the project directory#
+path_to_project = '~/Projects/Income-Prediction-Model'#
+setwd(path_to_project)#
+############################
+## SETUP TRAINING DATA  ####
+############################
+#
+# Read the training data#
+adult.data = read.csv('Data/adult.data.csv', header=F)#
+#
+# Set the column names#
+colnames(adult.data) = c('age','workclass','fnlwgt','education','educationNum','maritalStatus','occupation','relationship','race','sex','capitalGain','capitalLoss','hoursPerWeek','nativeCountry','income')#
+#
+is.na(adult.data) = adult.data=='?'#
+is.na(adult.data) = adult.data==' ?'#
+adult.data = na.omit(adult.data)#
+# Remove the fnlwgt column#
+adult.data = subset(adult.data, select = -fnlwgt)#
+#
+# Combine workclass groups#
+adult.data$workclass = gsub("Self-emp-inc","Self-emp",adult.data$workclass)#
+adult.data$workclass = gsub("Self-emp-not-inc","Self-emp",adult.data$workclass)#
+adult.data$workclass = gsub("Never-worked","Not-working",adult.data$workclass)#
+adult.data$workclass = gsub("Without-pay","Not-working",adult.data$workclass)#
+adult.data$workclass = gsub("State-gov","Small-gov",adult.data$workclass)#
+adult.data$workclass = gsub("Local-gov","Small-gov",adult.data$workclass)#
+table(adult.data$workclass)#
+#
+# Combine education groups#
+adult.data$education = gsub("Preschool","Dropout",adult.data$education)#
+adult.data$education = gsub("1st-4th","Dropout",adult.data$education)#
+adult.data$education = gsub("5th-6th","Dropout",adult.data$education)#
+adult.data$education = gsub("7th-8th","Dropout",adult.data$education)#
+adult.data$education = gsub("9th","Dropout",adult.data$education)#
+adult.data$education = gsub("10th","Dropout",adult.data$education)#
+adult.data$education = gsub("11th","Dropout",adult.data$education)#
+adult.data$education = gsub("12th","Dropout",adult.data$education)#
+adult.data$education = gsub("HS-grad","HS-grad",adult.data$education)#
+adult.data$education = gsub("Some-college","HS-grad",adult.data$education)#
+adult.data$education = gsub("Assoc-acdm","Assoc",adult.data$education)#
+adult.data$education = gsub("Assoc-voc","Assoc",adult.data$education)#
+table(adult.data$education)#
+#
+# Combine marital status groups#
+adult.data$maritalStatus = gsub("Married-AF-spouse","Married",adult.data$maritalStatus)#
+adult.data$maritalStatus = gsub("Married-civ-spouse","Married",adult.data$maritalStatus)#
+adult.data$maritalStatus = gsub("Married-spouse-absent","Not-married",adult.data$maritalStatus)#
+adult.data$maritalStatus = gsub("Separated","Not-married",adult.data$maritalStatus)#
+adult.data$maritalStatus = gsub("Divorced","Not-married",adult.data$maritalStatus)#
+table(adult.data$maritalStatus)#
+#
+table(adult.data$occupation)#
+# make the income data easier to work with#
+adult.data = within(adult.data, {#
+	income = ifelse(income ==  ' >50K', 1, 0)#
+})#
+#
+is.na(adult.data) = adult.data=='?'#
+is.na(adult.data) = adult.data==' ?'#
+adult.data = na.omit(adult.data)#
+# Display first 5 rows to verify everything looks like it should#
+adult.data[0:5,]#
+############################
+###   SETUP TEST DATA  #####
+############################
+# Read the test data#
+adult.test = read.csv('Data/adult.test.csv')#
+#
+# Set the test column names#
+colnames(adult.test) = c('age','workclass','fnlwgt','education','educationNum','maritalStatus','occupation','relationship','race','sex','capitalGain','capitalLoss','hoursPerWeek','nativeCountry','income')#
+#
+is.na(adult.test) = adult.test=='?'#
+is.na(adult.test) = adult.test==' ?'#
+adult.test = na.omit(adult.test)#
+# Remove the fnlwgt column#
+adult.test = subset(adult.test, select = -fnlwgt)#
+#
+# Combine workclass groups#
+adult.test$workclass = gsub("Self-emp-inc","Self-emp",adult.test$workclass)#
+adult.test$workclass = gsub("Self-emp-not-inc","Self-emp",adult.test$workclass)#
+adult.test$workclass = gsub("Never-worked","Not-working",adult.test$workclass)#
+adult.test$workclass = gsub("Without-pay","Not-working",adult.test$workclass)#
+adult.test$workclass = gsub("State-gov","Small-gov",adult.test$workclass)#
+adult.test$workclass = gsub("Local-gov","Small-gov",adult.test$workclass)#
+table(adult.test$workclass)#
+#
+# Combine education groups#
+adult.test$education = gsub("Preschool","Dropout",adult.test$education)#
+adult.test$education = gsub("1st-4th","Dropout",adult.test$education)#
+adult.test$education = gsub("5th-6th","Dropout",adult.test$education)#
+adult.test$education = gsub("7th-8th","Dropout",adult.test$education)#
+adult.test$education = gsub("9th","Dropout",adult.test$education)#
+adult.test$education = gsub("10th","Dropout",adult.test$education)#
+adult.test$education = gsub("11th","Dropout",adult.test$education)#
+adult.test$education = gsub("12th","Dropout",adult.test$education)#
+adult.test$education = gsub("HS-grad","HS-grad",adult.test$education)#
+adult.test$education = gsub("Some-college","HS-grad",adult.test$education)#
+adult.test$education = gsub("Assoc-acdm","Assoc",adult.test$education)#
+adult.test$education = gsub("Assoc-voc","Assoc",adult.test$education)#
+table(adult.test$education)#
+#
+# Combine marital status groups#
+adult.test$maritalStatus = gsub("Married-AF-spouse","Married",adult.test$maritalStatus)#
+adult.test$maritalStatus = gsub("Married-civ-spouse","Married",adult.test$maritalStatus)#
+adult.test$maritalStatus = gsub("Married-spouse-absent","Not-married",adult.test$maritalStatus)#
+adult.test$maritalStatus = gsub("Separated","Not-married",adult.test$maritalStatus)#
+adult.test$maritalStatus = gsub("Divorced","Not-married",adult.test$maritalStatus)#
+table(adult.test$maritalStatus)#
+#
+table(adult.test$occupation)#
+# make the test data easier to work with#
+adult.test = within(adult.test, {#
+	income = ifelse(income ==  ' >50K.', 1, 0)#
+})#
+#
+# Display first 5 rows to verify everything looks like it should#
+adult.test[0:5,]#
+#
+names(adult.data)
+# linear regression using random variable selected by me#
+adult.poly = lm(income~education+workclass+maritalStatus+race+sex+poly(educationNum,2)+poly(hoursPerWeek,8), data=adult.data)#
+#
+# do the prediction#
+yhat = predict(adult.poly,adult.test)#
+#
+# if yhat is greater than .5 it is 1 else 0#
+yhat = ifelse(yhat >= 0.5 , 1, 0)#
+#
+# get and display the mse#
+mean((yhat - adult.test$income) ^ 2)
+############################
+##    SETUP PROJECT     ####
+############################
+#
+# Set the project directory#
+path_to_project = '~/Projects/Income-Prediction-Model'#
+setwd(path_to_project)#
+############################
+## SETUP TRAINING DATA  ####
+############################
+#
+# Read the training data#
+adult.data = read.csv('Data/adult.data.csv', header=F)#
+#
+# Set the column names#
+colnames(adult.data) = c('age','workclass','fnlwgt','education','educationNum','maritalStatus','occupation','relationship','race','sex','capitalGain','capitalLoss','hoursPerWeek','nativeCountry','income')#
+#
+is.na(adult.data) = adult.data=='?'#
+is.na(adult.data) = adult.data==' ?'#
+adult.data = na.omit(adult.data)#
+# Remove the fnlwgt column#
+adult.data = subset(adult.data, select = -fnlwgt)#
+#
+# Combine workclass groups#
+adult.data$workclass = gsub("Self-emp-inc","Self-emp",adult.data$workclass)#
+adult.data$workclass = gsub("Self-emp-not-inc","Self-emp",adult.data$workclass)#
+adult.data$workclass = gsub("Never-worked","Not-working",adult.data$workclass)#
+adult.data$workclass = gsub("Without-pay","Not-working",adult.data$workclass)#
+adult.data$workclass = gsub("State-gov","Small-gov",adult.data$workclass)#
+adult.data$workclass = gsub("Local-gov","Small-gov",adult.data$workclass)#
+table(adult.data$workclass)#
+#
+# Combine education groups#
+adult.data$education = gsub("Preschool","Dropout",adult.data$education)#
+adult.data$education = gsub("1st-4th","Dropout",adult.data$education)#
+adult.data$education = gsub("5th-6th","Dropout",adult.data$education)#
+adult.data$education = gsub("7th-8th","Dropout",adult.data$education)#
+adult.data$education = gsub("9th","Dropout",adult.data$education)#
+adult.data$education = gsub("10th","Dropout",adult.data$education)#
+adult.data$education = gsub("11th","Dropout",adult.data$education)#
+adult.data$education = gsub("12th","Dropout",adult.data$education)#
+adult.data$education = gsub("HS-grad","HS-grad",adult.data$education)#
+adult.data$education = gsub("Some-college","HS-grad",adult.data$education)#
+adult.data$education = gsub("Assoc-acdm","Assoc",adult.data$education)#
+adult.data$education = gsub("Assoc-voc","Assoc",adult.data$education)#
+table(adult.data$education)#
+#
+# Combine marital status groups#
+adult.data$maritalStatus = gsub("Married-AF-spouse","Married",adult.data$maritalStatus)#
+adult.data$maritalStatus = gsub("Married-civ-spouse","Married",adult.data$maritalStatus)#
+adult.data$maritalStatus = gsub("Married-spouse-absent","Not-married",adult.data$maritalStatus)#
+adult.data$maritalStatus = gsub("Separated","Not-married",adult.data$maritalStatus)#
+adult.data$maritalStatus = gsub("Divorced","Not-married",adult.data$maritalStatus)#
+table(adult.data$maritalStatus)#
+#
+table(adult.data$occupation)#
+# make the income data easier to work with#
+adult.data = within(adult.data, {#
+	income = ifelse(income ==  ' >50K', 1, 0)#
+})#
+#
+is.na(adult.data) = adult.data=='?'#
+is.na(adult.data) = adult.data==' ?'#
+adult.data = na.omit(adult.data)#
+# Display first 5 rows to verify everything looks like it should#
+adult.data[0:5,]#
+############################
+###   SETUP TEST DATA  #####
+############################
+# Read the test data#
+adult.test = read.csv('Data/adult.test.csv')#
+#
+# Set the test column names#
+colnames(adult.test) = c('age','workclass','fnlwgt','education','educationNum','maritalStatus','occupation','relationship','race','sex','capitalGain','capitalLoss','hoursPerWeek','nativeCountry','income')#
+# Remove the fnlwgt column#
+adult.test = subset(adult.test, select = -fnlwgt)#
+#
+# Combine workclass groups#
+adult.test$workclass = gsub("Self-emp-inc","Self-emp",adult.test$workclass)#
+adult.test$workclass = gsub("Self-emp-not-inc","Self-emp",adult.test$workclass)#
+adult.test$workclass = gsub("Never-worked","Not-working",adult.test$workclass)#
+adult.test$workclass = gsub("Without-pay","Not-working",adult.test$workclass)#
+adult.test$workclass = gsub("State-gov","Small-gov",adult.test$workclass)#
+adult.test$workclass = gsub("Local-gov","Small-gov",adult.test$workclass)#
+table(adult.test$workclass)#
+#
+# Combine education groups#
+adult.test$education = gsub("Preschool","Dropout",adult.test$education)#
+adult.test$education = gsub("1st-4th","Dropout",adult.test$education)#
+adult.test$education = gsub("5th-6th","Dropout",adult.test$education)#
+adult.test$education = gsub("7th-8th","Dropout",adult.test$education)#
+adult.test$education = gsub("9th","Dropout",adult.test$education)#
+adult.test$education = gsub("10th","Dropout",adult.test$education)#
+adult.test$education = gsub("11th","Dropout",adult.test$education)#
+adult.test$education = gsub("12th","Dropout",adult.test$education)#
+adult.test$education = gsub("HS-grad","HS-grad",adult.test$education)#
+adult.test$education = gsub("Some-college","HS-grad",adult.test$education)#
+adult.test$education = gsub("Assoc-acdm","Assoc",adult.test$education)#
+adult.test$education = gsub("Assoc-voc","Assoc",adult.test$education)#
+table(adult.test$education)#
+#
+# Combine marital status groups#
+adult.test$maritalStatus = gsub("Married-AF-spouse","Married",adult.test$maritalStatus)#
+adult.test$maritalStatus = gsub("Married-civ-spouse","Married",adult.test$maritalStatus)#
+adult.test$maritalStatus = gsub("Married-spouse-absent","Not-married",adult.test$maritalStatus)#
+adult.test$maritalStatus = gsub("Separated","Not-married",adult.test$maritalStatus)#
+adult.test$maritalStatus = gsub("Divorced","Not-married",adult.test$maritalStatus)#
+table(adult.test$maritalStatus)#
+#
+table(adult.test$occupation)#
+# make the test data easier to work with#
+adult.test = within(adult.test, {#
+	income = ifelse(income ==  ' >50K.', 1, 0)#
+})#
+#
+# Display first 5 rows to verify everything looks like it should#
+adult.test[0:5,]#
+#
+names(adult.data)
+# linear regression using random variable selected by me#
+adult.poly = lm(income~education+workclass+maritalStatus+race+sex+poly(educationNum,2)+poly(hoursPerWeek,8), data=adult.data)#
+#
+# do the prediction#
+yhat = predict(adult.poly,adult.test)#
+#
+# if yhat is greater than .5 it is 1 else 0#
+yhat = ifelse(yhat >= 0.5 , 1, 0)#
+#
+# get and display the mse#
+mean((yhat - adult.test$income) ^ 2)
+############################
+##    SETUP PROJECT     ####
+############################
+#
+# Set the project directory#
+path_to_project = '~/Projects/Income-Prediction-Model'#
+setwd(path_to_project)#
+############################
+## SETUP TRAINING DATA  ####
+############################
+#
+# Read the training data#
+adult.data = read.csv('Data/adult.data.csv', header=F)#
+#
+# Set the column names#
+colnames(adult.data) = c('age','workclass','fnlwgt','education','educationNum','maritalStatus','occupation','relationship','race','sex','capitalGain','capitalLoss','hoursPerWeek','nativeCountry','income')#
+#
+is.na(adult.data) = adult.data=='?'#
+is.na(adult.data) = adult.data==' ?'#
+adult.data = na.omit(adult.data)#
+# Remove the fnlwgt column#
+adult.data = subset(adult.data, select = -fnlwgt)#
+#
+# Combine workclass groups#
+adult.data$workclass = gsub("Self-emp-inc","Self-emp",adult.data$workclass)#
+adult.data$workclass = gsub("Self-emp-not-inc","Self-emp",adult.data$workclass)#
+adult.data$workclass = gsub("Never-worked","Not-working",adult.data$workclass)#
+adult.data$workclass = gsub("Without-pay","Not-working",adult.data$workclass)#
+adult.data$workclass = gsub("State-gov","Small-gov",adult.data$workclass)#
+adult.data$workclass = gsub("Local-gov","Small-gov",adult.data$workclass)#
+table(adult.data$workclass)#
+#
+# Combine education groups#
+adult.data$education = gsub("Preschool","Dropout",adult.data$education)#
+adult.data$education = gsub("1st-4th","Dropout",adult.data$education)#
+adult.data$education = gsub("5th-6th","Dropout",adult.data$education)#
+adult.data$education = gsub("7th-8th","Dropout",adult.data$education)#
+adult.data$education = gsub("9th","Dropout",adult.data$education)#
+adult.data$education = gsub("10th","Dropout",adult.data$education)#
+adult.data$education = gsub("11th","Dropout",adult.data$education)#
+adult.data$education = gsub("12th","Dropout",adult.data$education)#
+adult.data$education = gsub("HS-grad","HS-grad",adult.data$education)#
+adult.data$education = gsub("Some-college","HS-grad",adult.data$education)#
+adult.data$education = gsub("Assoc-acdm","Assoc",adult.data$education)#
+adult.data$education = gsub("Assoc-voc","Assoc",adult.data$education)#
+table(adult.data$education)#
+#
+# Combine marital status groups#
+adult.data$maritalStatus = gsub("Married-AF-spouse","Married",adult.data$maritalStatus)#
+adult.data$maritalStatus = gsub("Married-civ-spouse","Married",adult.data$maritalStatus)#
+adult.data$maritalStatus = gsub("Married-spouse-absent","Not-married",adult.data$maritalStatus)#
+adult.data$maritalStatus = gsub("Separated","Not-married",adult.data$maritalStatus)#
+adult.data$maritalStatus = gsub("Divorced","Not-married",adult.data$maritalStatus)#
+table(adult.data$maritalStatus)#
+#
+table(adult.data$occupation)#
+# make the income data easier to work with#
+adult.data = within(adult.data, {#
+	income = ifelse(income ==  ' >50K', 1, 0)#
+})#
+#
+is.na(adult.data) = adult.data=='?'#
+is.na(adult.data) = adult.data==' ?'#
+adult.data = na.omit(adult.data)#
+# Display first 5 rows to verify everything looks like it should#
+adult.data[0:5,]#
+############################
+###   SETUP TEST DATA  #####
+############################
+# Read the test data#
+adult.test = read.csv('Data/adult.test.csv')#
+#
+# Set the test column names#
+colnames(adult.test) = c('age','workclass','fnlwgt','education','educationNum','maritalStatus','occupation','relationship','race','sex','capitalGain','capitalLoss','hoursPerWeek','nativeCountry','income')#
+# Remove the fnlwgt column#
+adult.test = subset(adult.test, select = -fnlwgt)#
+#
+# Combine workclass groups#
+adult.test$workclass = gsub("Self-emp-inc","Self-emp",adult.test$workclass)#
+adult.test$workclass = gsub("Self-emp-not-inc","Self-emp",adult.test$workclass)#
+adult.test$workclass = gsub("Never-worked","Not-working",adult.test$workclass)#
+adult.test$workclass = gsub("Without-pay","Not-working",adult.test$workclass)#
+adult.test$workclass = gsub("State-gov","Small-gov",adult.test$workclass)#
+adult.test$workclass = gsub("Local-gov","Small-gov",adult.test$workclass)#
+table(adult.test$workclass)#
+#
+# Combine education groups#
+adult.test$education = gsub("Preschool","Dropout",adult.test$education)#
+adult.test$education = gsub("1st-4th","Dropout",adult.test$education)#
+adult.test$education = gsub("5th-6th","Dropout",adult.test$education)#
+adult.test$education = gsub("7th-8th","Dropout",adult.test$education)#
+adult.test$education = gsub("9th","Dropout",adult.test$education)#
+adult.test$education = gsub("10th","Dropout",adult.test$education)#
+adult.test$education = gsub("11th","Dropout",adult.test$education)#
+adult.test$education = gsub("12th","Dropout",adult.test$education)#
+adult.test$education = gsub("HS-grad","HS-grad",adult.test$education)#
+adult.test$education = gsub("Some-college","HS-grad",adult.test$education)#
+adult.test$education = gsub("Assoc-acdm","Assoc",adult.test$education)#
+adult.test$education = gsub("Assoc-voc","Assoc",adult.test$education)#
+table(adult.test$education)#
+#
+# Combine marital status groups#
+adult.test$maritalStatus = gsub("Married-AF-spouse","Married",adult.test$maritalStatus)#
+adult.test$maritalStatus = gsub("Married-civ-spouse","Married",adult.test$maritalStatus)#
+adult.test$maritalStatus = gsub("Married-spouse-absent","Not-married",adult.test$maritalStatus)#
+adult.test$maritalStatus = gsub("Separated","Not-married",adult.test$maritalStatus)#
+adult.test$maritalStatus = gsub("Divorced","Not-married",adult.test$maritalStatus)#
+table(adult.test$maritalStatus)#
+#
+table(adult.test$occupation)#
+# make the test data easier to work with#
+adult.test = within(adult.test, {#
+	income = ifelse(income ==  ' >50K.', 1, 0)#
+})#
+#
+# Display first 5 rows to verify everything looks like it should#
+adult.test[0:5,]#
+#
+names(adult.data)
+# linear regression using random variable selected by me#
+adult.poly = lm(income~education+workclass+maritalStatus+race+sex+poly(educationNum,2)+poly(hoursPerWeek,8), data=adult.data)#
+#
+# do the prediction#
+yhat = predict(adult.poly,adult.test)#
+#
+# if yhat is greater than .5 it is 1 else 0#
+yhat = ifelse(yhat >= 0.5 , 1, 0)#
+#
+# get and display the mse#
+mean((yhat - adult.test$income) ^ 2)
+############################
+##    SETUP PROJECT     ####
+############################
+#
+# Set the project directory#
+path_to_project = '~/Projects/Income-Prediction-Model'#
+setwd(path_to_project)#
+############################
+## SETUP TRAINING DATA  ####
+############################
+#
+# Read the training data#
+adult.data = read.csv('Data/adult.data.csv', header=F)#
+#
+# Set the column names#
+colnames(adult.data) = c('age','workclass','fnlwgt','education','educationNum','maritalStatus','occupation','relationship','race','sex','capitalGain','capitalLoss','hoursPerWeek','nativeCountry','income')#
+# Remove the fnlwgt column#
+adult.data = subset(adult.data, select = -fnlwgt)#
+#
+# Combine workclass groups#
+adult.data$workclass = gsub("Self-emp-inc","Self-emp",adult.data$workclass)#
+adult.data$workclass = gsub("Self-emp-not-inc","Self-emp",adult.data$workclass)#
+adult.data$workclass = gsub("Never-worked","Not-working",adult.data$workclass)#
+adult.data$workclass = gsub("Without-pay","Not-working",adult.data$workclass)#
+adult.data$workclass = gsub("State-gov","Small-gov",adult.data$workclass)#
+adult.data$workclass = gsub("Local-gov","Small-gov",adult.data$workclass)#
+table(adult.data$workclass)#
+#
+# Combine education groups#
+adult.data$education = gsub("Preschool","Dropout",adult.data$education)#
+adult.data$education = gsub("1st-4th","Dropout",adult.data$education)#
+adult.data$education = gsub("5th-6th","Dropout",adult.data$education)#
+adult.data$education = gsub("7th-8th","Dropout",adult.data$education)#
+adult.data$education = gsub("9th","Dropout",adult.data$education)#
+adult.data$education = gsub("10th","Dropout",adult.data$education)#
+adult.data$education = gsub("11th","Dropout",adult.data$education)#
+adult.data$education = gsub("12th","Dropout",adult.data$education)#
+adult.data$education = gsub("HS-grad","HS-grad",adult.data$education)#
+adult.data$education = gsub("Some-college","HS-grad",adult.data$education)#
+adult.data$education = gsub("Assoc-acdm","Assoc",adult.data$education)#
+adult.data$education = gsub("Assoc-voc","Assoc",adult.data$education)#
+table(adult.data$education)#
+#
+# Combine marital status groups#
+adult.data$maritalStatus = gsub("Married-AF-spouse","Married",adult.data$maritalStatus)#
+adult.data$maritalStatus = gsub("Married-civ-spouse","Married",adult.data$maritalStatus)#
+adult.data$maritalStatus = gsub("Married-spouse-absent","Not-married",adult.data$maritalStatus)#
+adult.data$maritalStatus = gsub("Separated","Not-married",adult.data$maritalStatus)#
+adult.data$maritalStatus = gsub("Divorced","Not-married",adult.data$maritalStatus)#
+table(adult.data$maritalStatus)#
+#
+table(adult.data$occupation)#
+# make the income data easier to work with#
+adult.data = within(adult.data, {#
+	income = ifelse(income ==  ' >50K', 1, 0)#
+})#
+#
+is.na(adult.data) = adult.data=='?'#
+is.na(adult.data) = adult.data==' ?'#
+adult.data = na.omit(adult.data)#
+# Display first 5 rows to verify everything looks like it should#
+adult.data[0:5,]#
+############################
+###   SETUP TEST DATA  #####
+############################
+# Read the test data#
+adult.test = read.csv('Data/adult.test.csv')#
+#
+# Set the test column names#
+colnames(adult.test) = c('age','workclass','fnlwgt','education','educationNum','maritalStatus','occupation','relationship','race','sex','capitalGain','capitalLoss','hoursPerWeek','nativeCountry','income')#
+#
+is.na(adult.test) = adult.test=='?'#
+is.na(adult.test) = adult.test==' ?'#
+adult.test = na.omit(adult.test)#
+# Remove the fnlwgt column#
+adult.test = subset(adult.test, select = -fnlwgt)#
+#
+# Combine workclass groups#
+adult.test$workclass = gsub("Self-emp-inc","Self-emp",adult.test$workclass)#
+adult.test$workclass = gsub("Self-emp-not-inc","Self-emp",adult.test$workclass)#
+adult.test$workclass = gsub("Never-worked","Not-working",adult.test$workclass)#
+adult.test$workclass = gsub("Without-pay","Not-working",adult.test$workclass)#
+adult.test$workclass = gsub("State-gov","Small-gov",adult.test$workclass)#
+adult.test$workclass = gsub("Local-gov","Small-gov",adult.test$workclass)#
+table(adult.test$workclass)#
+#
+# Combine education groups#
+adult.test$education = gsub("Preschool","Dropout",adult.test$education)#
+adult.test$education = gsub("1st-4th","Dropout",adult.test$education)#
+adult.test$education = gsub("5th-6th","Dropout",adult.test$education)#
+adult.test$education = gsub("7th-8th","Dropout",adult.test$education)#
+adult.test$education = gsub("9th","Dropout",adult.test$education)#
+adult.test$education = gsub("10th","Dropout",adult.test$education)#
+adult.test$education = gsub("11th","Dropout",adult.test$education)#
+adult.test$education = gsub("12th","Dropout",adult.test$education)#
+adult.test$education = gsub("HS-grad","HS-grad",adult.test$education)#
+adult.test$education = gsub("Some-college","HS-grad",adult.test$education)#
+adult.test$education = gsub("Assoc-acdm","Assoc",adult.test$education)#
+adult.test$education = gsub("Assoc-voc","Assoc",adult.test$education)#
+table(adult.test$education)#
+#
+# Combine marital status groups#
+adult.test$maritalStatus = gsub("Married-AF-spouse","Married",adult.test$maritalStatus)#
+adult.test$maritalStatus = gsub("Married-civ-spouse","Married",adult.test$maritalStatus)#
+adult.test$maritalStatus = gsub("Married-spouse-absent","Not-married",adult.test$maritalStatus)#
+adult.test$maritalStatus = gsub("Separated","Not-married",adult.test$maritalStatus)#
+adult.test$maritalStatus = gsub("Divorced","Not-married",adult.test$maritalStatus)#
+table(adult.test$maritalStatus)#
+#
+table(adult.test$occupation)#
+# make the test data easier to work with#
+adult.test = within(adult.test, {#
+	income = ifelse(income ==  ' >50K.', 1, 0)#
+})#
+#
+# Display first 5 rows to verify everything looks like it should#
+adult.test[0:5,]#
+#
+names(adult.data)
+# linear regression using random variable selected by me#
+adult.poly = lm(income~education+workclass+maritalStatus+race+sex+poly(educationNum,2)+poly(hoursPerWeek,8), data=adult.data)#
+#
+# do the prediction#
+yhat = predict(adult.poly,adult.test)#
+#
+# if yhat is greater than .5 it is 1 else 0#
+yhat = ifelse(yhat >= 0.5 , 1, 0)#
+#
+# get and display the mse#
+mean((yhat - adult.test$income) ^ 2)
+dim(adult.data)
+############################
+##    SETUP PROJECT     ####
+############################
+#
+# Set the project directory#
+path_to_project = '~/Projects/Income-Prediction-Model'#
+setwd(path_to_project)#
+############################
+## SETUP TRAINING DATA  ####
+############################
+#
+# Read the training data#
+adult.data = read.csv('Data/adult.data.csv', header=F)#
+#
+# Set the column names#
+colnames(adult.data) = c('age','workclass','fnlwgt','education','educationNum','maritalStatus','occupation','relationship','race','sex','capitalGain','capitalLoss','hoursPerWeek','nativeCountry','income')#
+#
+dim(adult.data)#
+#
+is.na(adult.data) = adult.data=='?'#
+is.na(adult.data) = adult.data==' ?'#
+data = na.omit(adult.data)#
+#
+# Remove the fnlwgt column#
+adult.data = subset(adult.data, select = -fnlwgt)#
+#
+# Combine workclass groups#
+adult.data$workclass = gsub("Self-emp-inc","Self-emp",adult.data$workclass)#
+adult.data$workclass = gsub("Self-emp-not-inc","Self-emp",adult.data$workclass)#
+adult.data$workclass = gsub("Never-worked","Not-working",adult.data$workclass)#
+adult.data$workclass = gsub("Without-pay","Not-working",adult.data$workclass)#
+adult.data$workclass = gsub("State-gov","Small-gov",adult.data$workclass)#
+adult.data$workclass = gsub("Local-gov","Small-gov",adult.data$workclass)#
+table(adult.data$workclass)#
+#
+# Combine education groups#
+adult.data$education = gsub("Preschool","Dropout",adult.data$education)#
+adult.data$education = gsub("1st-4th","Dropout",adult.data$education)#
+adult.data$education = gsub("5th-6th","Dropout",adult.data$education)#
+adult.data$education = gsub("7th-8th","Dropout",adult.data$education)#
+adult.data$education = gsub("9th","Dropout",adult.data$education)#
+adult.data$education = gsub("10th","Dropout",adult.data$education)#
+adult.data$education = gsub("11th","Dropout",adult.data$education)#
+adult.data$education = gsub("12th","Dropout",adult.data$education)#
+adult.data$education = gsub("HS-grad","HS-grad",adult.data$education)#
+adult.data$education = gsub("Some-college","HS-grad",adult.data$education)#
+adult.data$education = gsub("Assoc-acdm","Assoc",adult.data$education)#
+adult.data$education = gsub("Assoc-voc","Assoc",adult.data$education)#
+table(adult.data$education)#
+#
+# Combine marital status groups#
+adult.data$maritalStatus = gsub("Married-AF-spouse","Married",adult.data$maritalStatus)#
+adult.data$maritalStatus = gsub("Married-civ-spouse","Married",adult.data$maritalStatus)#
+adult.data$maritalStatus = gsub("Married-spouse-absent","Not-married",adult.data$maritalStatus)#
+adult.data$maritalStatus = gsub("Separated","Not-married",adult.data$maritalStatus)#
+adult.data$maritalStatus = gsub("Divorced","Not-married",adult.data$maritalStatus)#
+table(adult.data$maritalStatus)#
+#
+table(adult.data$occupation)#
+# make the income data easier to work with#
+adult.data = within(adult.data, {#
+	income = ifelse(income ==  ' >50K', 1, 0)#
+})#
+# Display first 5 rows to verify everything looks like it should#
+adult.data[0:5,]#
+#
+dim(adult.data)#
+############################
+###   SETUP TEST DATA  #####
+############################
+# Read the test data#
+adult.test = read.csv('Data/adult.test.csv')#
+#
+# Set the test column names#
+colnames(adult.test) = c('age','workclass','fnlwgt','education','educationNum','maritalStatus','occupation','relationship','race','sex','capitalGain','capitalLoss','hoursPerWeek','nativeCountry','income')#
+#
+# Remove the fnlwgt column#
+adult.test = subset(adult.test, select = -fnlwgt)#
+#
+# Combine workclass groups#
+adult.test$workclass = gsub("Self-emp-inc","Self-emp",adult.test$workclass)#
+adult.test$workclass = gsub("Self-emp-not-inc","Self-emp",adult.test$workclass)#
+adult.test$workclass = gsub("Never-worked","Not-working",adult.test$workclass)#
+adult.test$workclass = gsub("Without-pay","Not-working",adult.test$workclass)#
+adult.test$workclass = gsub("State-gov","Small-gov",adult.test$workclass)#
+adult.test$workclass = gsub("Local-gov","Small-gov",adult.test$workclass)#
+table(adult.test$workclass)#
+#
+# Combine education groups#
+adult.test$education = gsub("Preschool","Dropout",adult.test$education)#
+adult.test$education = gsub("1st-4th","Dropout",adult.test$education)#
+adult.test$education = gsub("5th-6th","Dropout",adult.test$education)#
+adult.test$education = gsub("7th-8th","Dropout",adult.test$education)#
+adult.test$education = gsub("9th","Dropout",adult.test$education)#
+adult.test$education = gsub("10th","Dropout",adult.test$education)#
+adult.test$education = gsub("11th","Dropout",adult.test$education)#
+adult.test$education = gsub("12th","Dropout",adult.test$education)#
+adult.test$education = gsub("HS-grad","HS-grad",adult.test$education)#
+adult.test$education = gsub("Some-college","HS-grad",adult.test$education)#
+adult.test$education = gsub("Assoc-acdm","Assoc",adult.test$education)#
+adult.test$education = gsub("Assoc-voc","Assoc",adult.test$education)#
+table(adult.test$education)#
+#
+# Combine marital status groups#
+adult.test$maritalStatus = gsub("Married-AF-spouse","Married",adult.test$maritalStatus)#
+adult.test$maritalStatus = gsub("Married-civ-spouse","Married",adult.test$maritalStatus)#
+adult.test$maritalStatus = gsub("Married-spouse-absent","Not-married",adult.test$maritalStatus)#
+adult.test$maritalStatus = gsub("Separated","Not-married",adult.test$maritalStatus)#
+adult.test$maritalStatus = gsub("Divorced","Not-married",adult.test$maritalStatus)#
+table(adult.test$maritalStatus)#
+#
+table(adult.test$occupation)#
+# make the test data easier to work with#
+adult.test = within(adult.test, {#
+	income = ifelse(income ==  ' >50K.', 1, 0)#
+})#
+#
+# Display first 5 rows to verify everything looks like it should#
+adult.test[0:5,]#
+#
+names(adult.data)
+############################
+##    SETUP PROJECT     ####
+############################
+#
+# Set the project directory#
+path_to_project = '~/Projects/Income-Prediction-Model'#
+setwd(path_to_project)#
+############################
+## SETUP TRAINING DATA  ####
+############################
+#
+# Read the training data#
+adult.data = read.csv('Data/adult.data.csv', header=F)#
+#
+# Set the column names#
+colnames(adult.data) = c('age','workclass','fnlwgt','education','educationNum','maritalStatus','occupation','relationship','race','sex','capitalGain','capitalLoss','hoursPerWeek','nativeCountry','income')#
+#
+dim(adult.data)#
+#
+is.na(adult.data) = adult.data=='?'#
+is.na(adult.data) = adult.data==' ?'#
+adult.data = na.omit(adult.data)#
+# Remove the fnlwgt column#
+adult.data = subset(adult.data, select = -fnlwgt)#
+#
+# Combine workclass groups#
+adult.data$workclass = gsub("Self-emp-inc","Self-emp",adult.data$workclass)#
+adult.data$workclass = gsub("Self-emp-not-inc","Self-emp",adult.data$workclass)#
+adult.data$workclass = gsub("Never-worked","Not-working",adult.data$workclass)#
+adult.data$workclass = gsub("Without-pay","Not-working",adult.data$workclass)#
+adult.data$workclass = gsub("State-gov","Small-gov",adult.data$workclass)#
+adult.data$workclass = gsub("Local-gov","Small-gov",adult.data$workclass)#
+table(adult.data$workclass)#
+#
+# Combine education groups#
+adult.data$education = gsub("Preschool","Dropout",adult.data$education)#
+adult.data$education = gsub("1st-4th","Dropout",adult.data$education)#
+adult.data$education = gsub("5th-6th","Dropout",adult.data$education)#
+adult.data$education = gsub("7th-8th","Dropout",adult.data$education)#
+adult.data$education = gsub("9th","Dropout",adult.data$education)#
+adult.data$education = gsub("10th","Dropout",adult.data$education)#
+adult.data$education = gsub("11th","Dropout",adult.data$education)#
+adult.data$education = gsub("12th","Dropout",adult.data$education)#
+adult.data$education = gsub("HS-grad","HS-grad",adult.data$education)#
+adult.data$education = gsub("Some-college","HS-grad",adult.data$education)#
+adult.data$education = gsub("Assoc-acdm","Assoc",adult.data$education)#
+adult.data$education = gsub("Assoc-voc","Assoc",adult.data$education)#
+table(adult.data$education)#
+#
+# Combine marital status groups#
+adult.data$maritalStatus = gsub("Married-AF-spouse","Married",adult.data$maritalStatus)#
+adult.data$maritalStatus = gsub("Married-civ-spouse","Married",adult.data$maritalStatus)#
+adult.data$maritalStatus = gsub("Married-spouse-absent","Not-married",adult.data$maritalStatus)#
+adult.data$maritalStatus = gsub("Separated","Not-married",adult.data$maritalStatus)#
+adult.data$maritalStatus = gsub("Divorced","Not-married",adult.data$maritalStatus)#
+table(adult.data$maritalStatus)#
+#
+table(adult.data$occupation)#
+# make the income data easier to work with#
+adult.data = within(adult.data, {#
+	income = ifelse(income ==  ' >50K', 1, 0)#
+})#
+# Display first 5 rows to verify everything looks like it should#
+adult.data[0:5,]#
+#
+dim(adult.data)#
+############################
+###   SETUP TEST DATA  #####
+############################
+# Read the test data#
+adult.test = read.csv('Data/adult.test.csv')#
+#
+# Set the test column names#
+colnames(adult.test) = c('age','workclass','fnlwgt','education','educationNum','maritalStatus','occupation','relationship','race','sex','capitalGain','capitalLoss','hoursPerWeek','nativeCountry','income')#
+#
+# Remove the fnlwgt column#
+adult.test = subset(adult.test, select = -fnlwgt)#
+#
+# Combine workclass groups#
+adult.test$workclass = gsub("Self-emp-inc","Self-emp",adult.test$workclass)#
+adult.test$workclass = gsub("Self-emp-not-inc","Self-emp",adult.test$workclass)#
+adult.test$workclass = gsub("Never-worked","Not-working",adult.test$workclass)#
+adult.test$workclass = gsub("Without-pay","Not-working",adult.test$workclass)#
+adult.test$workclass = gsub("State-gov","Small-gov",adult.test$workclass)#
+adult.test$workclass = gsub("Local-gov","Small-gov",adult.test$workclass)#
+table(adult.test$workclass)#
+#
+# Combine education groups#
+adult.test$education = gsub("Preschool","Dropout",adult.test$education)#
+adult.test$education = gsub("1st-4th","Dropout",adult.test$education)#
+adult.test$education = gsub("5th-6th","Dropout",adult.test$education)#
+adult.test$education = gsub("7th-8th","Dropout",adult.test$education)#
+adult.test$education = gsub("9th","Dropout",adult.test$education)#
+adult.test$education = gsub("10th","Dropout",adult.test$education)#
+adult.test$education = gsub("11th","Dropout",adult.test$education)#
+adult.test$education = gsub("12th","Dropout",adult.test$education)#
+adult.test$education = gsub("HS-grad","HS-grad",adult.test$education)#
+adult.test$education = gsub("Some-college","HS-grad",adult.test$education)#
+adult.test$education = gsub("Assoc-acdm","Assoc",adult.test$education)#
+adult.test$education = gsub("Assoc-voc","Assoc",adult.test$education)#
+table(adult.test$education)#
+#
+# Combine marital status groups#
+adult.test$maritalStatus = gsub("Married-AF-spouse","Married",adult.test$maritalStatus)#
+adult.test$maritalStatus = gsub("Married-civ-spouse","Married",adult.test$maritalStatus)#
+adult.test$maritalStatus = gsub("Married-spouse-absent","Not-married",adult.test$maritalStatus)#
+adult.test$maritalStatus = gsub("Separated","Not-married",adult.test$maritalStatus)#
+adult.test$maritalStatus = gsub("Divorced","Not-married",adult.test$maritalStatus)#
+table(adult.test$maritalStatus)#
+#
+table(adult.test$occupation)#
+# make the test data easier to work with#
+adult.test = within(adult.test, {#
+	income = ifelse(income ==  ' >50K.', 1, 0)#
+})#
+#
+# Display first 5 rows to verify everything looks like it should#
+adult.test[0:5,]#
+#
+names(adult.data)
+# linear regression using random variable selected by me#
+adult.poly = lm(income~education+workclass+maritalStatus+race+sex+poly(educationNum,2)+poly(hoursPerWeek,8), data=adult.data)#
+#
+# do the prediction#
+yhat = predict(adult.poly,adult.test)#
+#
+# if yhat is greater than .5 it is 1 else 0#
+yhat = ifelse(yhat >= 0.5 , 1, 0)#
+#
+# get and display the mse#
+mean((yhat - adult.test$income) ^ 2)
+############################
+##    SETUP PROJECT     ####
+############################
+#
+# Set the project directory#
+path_to_project = '~/Projects/Income-Prediction-Model'#
+setwd(path_to_project)#
+############################
+## SETUP TRAINING DATA  ####
+############################
+#
+# Read the training data#
+adult.data = read.csv('Data/adult.data.csv', header=F)#
+#
+# Set the column names#
+colnames(adult.data) = c('age','workclass','fnlwgt','education','educationNum','maritalStatus','occupation','relationship','race','sex','capitalGain','capitalLoss','hoursPerWeek','nativeCountry','income')#
+#
+dim(adult.data)#
+#
+is.na(adult.data) = adult.data=='?'#
+is.na(adult.data) = adult.data==' ?'#
+adult.data = na.omit(adult.data)#
+#
+# Remove the fnlwgt column#
+adult.data = subset(adult.data, select = -fnlwgt)#
+#
+# Combine workclass groups#
+adult.data$workclass = gsub("Self-emp-inc","Self-emp",adult.data$workclass)#
+adult.data$workclass = gsub("Self-emp-not-inc","Self-emp",adult.data$workclass)#
+adult.data$workclass = gsub("Never-worked","Not-working",adult.data$workclass)#
+adult.data$workclass = gsub("Without-pay","Not-working",adult.data$workclass)#
+adult.data$workclass = gsub("State-gov","Small-gov",adult.data$workclass)#
+adult.data$workclass = gsub("Local-gov","Small-gov",adult.data$workclass)#
+table(adult.data$workclass)#
+#
+# Combine education groups#
+adult.data$education = gsub("Preschool","Dropout",adult.data$education)#
+adult.data$education = gsub("1st-4th","Dropout",adult.data$education)#
+adult.data$education = gsub("5th-6th","Dropout",adult.data$education)#
+adult.data$education = gsub("7th-8th","Dropout",adult.data$education)#
+adult.data$education = gsub("9th","Dropout",adult.data$education)#
+adult.data$education = gsub("10th","Dropout",adult.data$education)#
+adult.data$education = gsub("11th","Dropout",adult.data$education)#
+adult.data$education = gsub("12th","Dropout",adult.data$education)#
+adult.data$education = gsub("HS-grad","HS-grad",adult.data$education)#
+adult.data$education = gsub("Some-college","HS-grad",adult.data$education)#
+adult.data$education = gsub("Assoc-acdm","Assoc",adult.data$education)#
+adult.data$education = gsub("Assoc-voc","Assoc",adult.data$education)#
+table(adult.data$education)#
+#
+# Combine marital status groups#
+adult.data$maritalStatus = gsub("Married-AF-spouse","Married",adult.data$maritalStatus)#
+adult.data$maritalStatus = gsub("Married-civ-spouse","Married",adult.data$maritalStatus)#
+adult.data$maritalStatus = gsub("Married-spouse-absent","Not-married",adult.data$maritalStatus)#
+adult.data$maritalStatus = gsub("Separated","Not-married",adult.data$maritalStatus)#
+adult.data$maritalStatus = gsub("Divorced","Not-married",adult.data$maritalStatus)#
+table(adult.data$maritalStatus)#
+#
+table(adult.data$occupation)#
+# make the income data easier to work with#
+adult.data = within(adult.data, {#
+	income = ifelse(income ==  ' >50K', 1, 0)#
+})#
+# Display first 5 rows to verify everything looks like it should#
+adult.data[0:5,]#
+#
+dim(adult.data)#
+############################
+###   SETUP TEST DATA  #####
+############################
+# Read the test data#
+adult.test = read.csv('Data/adult.test.csv')#
+#
+# Set the test column names#
+colnames(adult.test) = c('age','workclass','fnlwgt','education','educationNum','maritalStatus','occupation','relationship','race','sex','capitalGain','capitalLoss','hoursPerWeek','nativeCountry','income')#
+#
+dim(adult.test)#
+#
+is.na(adult.test) = adult.test=='?'#
+is.na(adult.test) = adult.test==' ?'#
+adult.test = na.omit(adult.test)#
+# Remove the fnlwgt column#
+adult.test = subset(adult.test, select = -fnlwgt)#
+#
+# Combine workclass groups#
+adult.test$workclass = gsub("Self-emp-inc","Self-emp",adult.test$workclass)#
+adult.test$workclass = gsub("Self-emp-not-inc","Self-emp",adult.test$workclass)#
+adult.test$workclass = gsub("Never-worked","Not-working",adult.test$workclass)#
+adult.test$workclass = gsub("Without-pay","Not-working",adult.test$workclass)#
+adult.test$workclass = gsub("State-gov","Small-gov",adult.test$workclass)#
+adult.test$workclass = gsub("Local-gov","Small-gov",adult.test$workclass)#
+table(adult.test$workclass)#
+#
+# Combine education groups#
+adult.test$education = gsub("Preschool","Dropout",adult.test$education)#
+adult.test$education = gsub("1st-4th","Dropout",adult.test$education)#
+adult.test$education = gsub("5th-6th","Dropout",adult.test$education)#
+adult.test$education = gsub("7th-8th","Dropout",adult.test$education)#
+adult.test$education = gsub("9th","Dropout",adult.test$education)#
+adult.test$education = gsub("10th","Dropout",adult.test$education)#
+adult.test$education = gsub("11th","Dropout",adult.test$education)#
+adult.test$education = gsub("12th","Dropout",adult.test$education)#
+adult.test$education = gsub("HS-grad","HS-grad",adult.test$education)#
+adult.test$education = gsub("Some-college","HS-grad",adult.test$education)#
+adult.test$education = gsub("Assoc-acdm","Assoc",adult.test$education)#
+adult.test$education = gsub("Assoc-voc","Assoc",adult.test$education)#
+table(adult.test$education)#
+#
+# Combine marital status groups#
+adult.test$maritalStatus = gsub("Married-AF-spouse","Married",adult.test$maritalStatus)#
+adult.test$maritalStatus = gsub("Married-civ-spouse","Married",adult.test$maritalStatus)#
+adult.test$maritalStatus = gsub("Married-spouse-absent","Not-married",adult.test$maritalStatus)#
+adult.test$maritalStatus = gsub("Separated","Not-married",adult.test$maritalStatus)#
+adult.test$maritalStatus = gsub("Divorced","Not-married",adult.test$maritalStatus)#
+table(adult.test$maritalStatus)#
+#
+table(adult.test$occupation)#
+# make the test data easier to work with#
+adult.test = within(adult.test, {#
+	income = ifelse(income ==  ' >50K.', 1, 0)#
+})#
+#
+# Display first 5 rows to verify everything looks like it should#
+adult.test[0:5,]#
+dim(adult.test)
+# linear regression using random variable selected by me#
+adult.poly = lm(income~education+workclass+maritalStatus+race+sex+poly(educationNum,2)+poly(hoursPerWeek,8), data=adult.data)#
+#
+# do the prediction#
+yhat = predict(adult.poly,adult.test)#
+#
+# if yhat is greater than .5 it is 1 else 0#
+yhat = ifelse(yhat >= 0.5 , 1, 0)#
+#
+# get and display the mse#
+mean((yhat - adult.test$income) ^ 2)
+summary(adult.poly)
+# linear regression using random variable selected by me#
+adult.poly = lm(income~education+workclass+maritalStatus+race+sex+poly(educationNum,12)+poly(hoursPerWeek,8), data=adult.data)#
+#
+summary(adult.poly)#
+#
+# do the prediction#
+yhat = predict(adult.poly,adult.test)#
+#
+# if yhat is greater than .5 it is 1 else 0#
+yhat = ifelse(yhat >= 0.5 , 1, 0)#
+#
+# get and display the mse#
+mean((yhat - adult.test$income) ^ 2)
+# linear regression using random variable selected by me#
+adult.poly = lm(income~education+workclass+maritalStatus+race+sex+poly(educationNum,22)+poly(hoursPerWeek,8), data=adult.data)#
+#
+summary(adult.poly)#
+#
+# do the prediction#
+yhat = predict(adult.poly,adult.test)#
+#
+# if yhat is greater than .5 it is 1 else 0#
+yhat = ifelse(yhat >= 0.5 , 1, 0)#
+#
+# get and display the mse#
+mean((yhat - adult.test$income) ^ 2)
+# linear regression using random variable selected by me#
+adult.poly = lm(income~education+workclass+maritalStatus+race+sex+poly(educationNum,2)+poly(hoursPerWeek,8), data=adult.data)#
+#
+summary(adult.poly)#
+#
+# do the prediction#
+yhat = predict(adult.poly,adult.test)#
+#
+# if yhat is greater than .5 it is 1 else 0#
+yhat = ifelse(yhat >= 0.5 , 1, 0)#
+#
+# get and display the mse#
+mean((yhat - adult.test$income) ^ 2)
+# linear regression using random variable selected by me#
+adult.poly = lm(income~education+workclass+maritalStatus+race+sex+poly(educationNum,8)+poly(hoursPerWeek,8), data=adult.data)#
+#
+summary(adult.poly)#
+#
+# do the prediction#
+yhat = predict(adult.poly,adult.test)#
+#
+# if yhat is greater than .5 it is 1 else 0#
+yhat = ifelse(yhat >= 0.5 , 1, 0)#
+#
+# get and display the mse#
+mean((yhat - adult.test$income) ^ 2)
+# Random forest#
+adult.rf = randomForst(income~., data=adult.data mtry=6, importance=TRUE)#
+#
+#lm(income~education+workclass+maritalStatus+race+sex+poly(educationNum,8)+poly(hoursPerWeek,8), data=adult.data)#
+#
+summary(adult.rf)#
+#
+# do the prediction#
+yhat = predict(adult.rf,adult.test)#
+#
+# if yhat is greater than .5 it is 1 else 0#
+yhat = ifelse(yhat >= 0.5 , 1, 0)#
+#
+# get and display the mse#
+mean((yhat - adult.test$income) ^ 2)
+# Random forest#
+adult.rf = randomForst(income~., data=adult.data, mtry=6, importance=TRUE)#
+#
+#lm(income~education+workclass+maritalStatus+race+sex+poly(educationNum,8)+poly(hoursPerWeek,8), data=adult.data)#
+#
+summary(adult.rf)#
+#
+# do the prediction#
+yhat = predict(adult.rf,adult.test)#
+#
+# if yhat is greater than .5 it is 1 else 0#
+yhat = ifelse(yhat >= 0.5 , 1, 0)#
+#
+# get and display the mse#
+mean((yhat - adult.test$income) ^ 2)
+# Random forest#
+adult.rf = randomForst(income~., data=adult.data, mtry=6, importance=TRUE)#
+#
+#lm(income~education+workclass+maritalStatus+race+sex+poly(educationNum,8)+poly(hoursPerWeek,8), data=adult.data)#
+#
+summary(adult.rf)#
+#
+# do the prediction#
+yhat = predict(adult.rf,adult.test)#
+#
+# if yhat is greater than .5 it is 1 else 0#
+yhat = ifelse(yhat >= 0.5 , 1, 0)#
+#
+# get and display the mse#
+mean((yhat - adult.test$income) ^ 2)
+adult.rf = randomForst(income~., data=adult.data, mtry=6, importance=TRUE)
+library(randomForest)
+adult.rf = randomForst(income~., data=adult.data, mtry=6, importance=TRUE)#
+#
+#lm(income~education+workclass+maritalStatus+race+sex+poly(educationNum,8)+poly(hoursPerWeek,8), data=adult.data)#
+#
+summary(adult.rf)#
+#
+# do the prediction#
+yhat = predict(adult.rf,adult.test)#
+#
+# if yhat is greater than .5 it is 1 else 0#
+yhat = ifelse(yhat >= 0.5 , 1, 0)#
+#
+# get and display the mse#
+mean((yhat - adult.test$income) ^ 2)
+adult.rf = randomForst(income~., data=adult.data, mtry=6, importance=TRUE)
+adult.rf = randomForest(income~., data=adult.data, mtry=6, importance=TRUE)
+# Random forest#
+library(randomForest)#
+adult.rf = randomForest(income~education, data=adult.data, mtry=6, importance=TRUE)#
+#
+#lm(income~education+workclass+maritalStatus+race+sex+poly(educationNum,8)+poly(hoursPerWeek,8), data=adult.data)#
+#
+summary(adult.rf)#
+#
+# do the prediction#
+yhat = predict(adult.rf,adult.test)#
+#
+# if yhat is greater than .5 it is 1 else 0#
+yhat = ifelse(yhat >= 0.5 , 1, 0)#
+#
+# get and display the mse#
+mean((yhat - adult.test$income) ^ 2)
+adult.rf = randomForest(income~educationNum, data=adult.data, mtry=6, importance=TRUE)
+yhat = predict(adult.rf,adult.test)
+yhat = ifelse(yhat >= 0.5 , 1, 0)
+mean((yhat - adult.test$income) ^ 2)
+adult.rf = randomForest(income~poly(educationNum,3), data=adult.data, mtry=6, importance=TRUE)
+adult.rf = randomForest(income~poly(adult.data$educationNum,3), data=adult.data, mtry=6, importance=TRUE)
+adult.rf = randomForest(income~educationNum+hoursPerWeek, data=adult.data, mtry=6, importance=TRUE)
+# do the prediction#
+yhat = predict(adult.rf,adult.test)#
+#
+# if yhat is greater than .5 it is 1 else 0#
+yhat = ifelse(yhat >= 0.5 , 1, 0)#
+#
+# get and display the mse#
+mean((yhat - adult.test$income) ^ 2)
+adult.tree = tree(income~., newdata=adult.data)
+library(tree)
+adult.tree = tree(income~., newdata=adult.data)
+adult.tree = tree(income~., data=adult.data)
+adult.tree = tree(income~income~education+workclass+maritalStatus+race+sex, data=adult.data)
+adult.tree = tree(income~education+workclass+maritalStatus+race+sex, data=adult.data)
+# Regression Tree#
+library(tree)#
+adult.tree = tree(income~education+workclass+maritalStatus+race+sex, data=adult.data)#
+#
+#lm(income~education+workclass+maritalStatus+race+sex+poly(educationNum,8)+poly(hoursPerWeek,8), data=adult.data)#
+#
+summary(adult.tree)#
+#
+# do the prediction#
+yhat = predict(adult.tree,adult.test)#
+#
+# if yhat is greater than .5 it is 1 else 0#
+yhat = ifelse(yhat >= 0.5 , 1, 0)#
+#
+# get and display the mse#
+mean((yhat - adult.test$income) ^ 2)
+# Random forest#
+library(randomForest)#
+adult.rf = randomForest(income~educationNum+hoursPerWeek, data=adult.data, mtry=8, importance=TRUE)#
+#
+#lm(income~education+workclass+maritalStatus+race+sex+poly(educationNum,8)+poly(hoursPerWeek,8), data=adult.data)#
+#
+summary(adult.rf)#
+#
+# do the prediction#
+yhat = predict(adult.rf,adult.test)#
+#
+# if yhat is greater than .5 it is 1 else 0#
+yhat = ifelse(yhat >= 0.5 , 1, 0)#
+#
+# get and display the mse#
+mean((yhat - adult.test$income) ^ 2)
+library(nnet)
+adult.nnet = nnet(income~education+workclass+maritalStatus+race+sex, data=adult.data, size=10, maxit=10000, decay=.001)
+# do the prediction#
+yhat = predict(adult.nnet,adult.test)#
+#
+# if yhat is greater than .5 it is 1 else 0#
+yhat = ifelse(yhat >= 0.5 , 1, 0)#
+#
+# get and display the mse#
+mean((yhat - adult.test$income) ^ 2)
+adult.nnet = nnet(income~education+workclass+maritalStatus+race+sex, data=adult.data, size=20, maxit=10000, decay=.001)#
+#
+#lm(income~education+workclass+maritalStatus+race+sex+poly(educationNum,8)+poly(hoursPerWeek,8), data=adult.data)#
+#
+summary(adult.tree)#
+#
+# do the prediction#
+yhat = predict(adult.nnet,adult.test)#
+#
+# if yhat is greater than .5 it is 1 else 0#
+yhat = ifelse(yhat >= 0.5 , 1, 0)#
+#
+# get and display the mse#
+mean((yhat - adult.test$income) ^ 2)
+adult.nnet = nnet(income~., data=adult.data, size=20, maxit=10000, decay=.001)#
+#
+#lm(income~education+workclass+maritalStatus+race+sex+poly(educationNum,8)+poly(hoursPerWeek,8), data=adult.data)#
+#
+summary(adult.tree)#
+#
+# do the prediction#
+yhat = predict(adult.nnet,adult.test)#
+#
+# if yhat is greater than .5 it is 1 else 0#
+yhat = ifelse(yhat >= 0.5 , 1, 0)#
+#
+# get and display the mse#
+mean((yhat - adult.test$income) ^ 2)
+adult.nnet = nnet(income~., data=adult.data, size=20, maxit=100000, decay=.001)#
+#
+#lm(income~education+workclass+maritalStatus+race+sex+poly(educationNum,8)+poly(hoursPerWeek,8), data=adult.data)#
+#
+summary(adult.tree)#
+#
+# do the prediction#
+yhat = predict(adult.nnet,adult.test)#
+#
+# if yhat is greater than .5 it is 1 else 0#
+yhat = ifelse(yhat >= 0.5 , 1, 0)#
+#
+# get and display the mse#
+mean((yhat - adult.test$income) ^ 2)
+adult.nnet = nnet(income~education+workclass+maritalStatus+race+sex+educationNum+hoursPerWeek, data=adult.data, size=20, maxit=10000, decay=.001)#
+#
+#lm(income~education+workclass+maritalStatus+race+sex+poly(educationNum,8)+poly(hoursPerWeek,8), data=adult.data)#
+#
+summary(adult.tree)#
+#
+# do the prediction#
+yhat = predict(adult.nnet,adult.test)#
+#
+# if yhat is greater than .5 it is 1 else 0#
+yhat = ifelse(yhat >= 0.5 , 1, 0)#
+#
+# get and display the mse#
+mean((yhat - adult.test$income) ^ 2)
+adult.nnet = nnet(income~education+workclass+maritalStatus+race+sex+educationNum+hoursPerWeek, data=adult.data, size=20, maxit=5000, decay=.001)#
+#
+#lm(income~education+workclass+maritalStatus+race+sex+poly(educationNum,8)+poly(hoursPerWeek,8), data=adult.data)#
+#
+summary(adult.tree)#
+#
+# do the prediction#
+yhat = predict(adult.nnet,adult.test)#
+#
+# if yhat is greater than .5 it is 1 else 0#
+yhat = ifelse(yhat >= 0.5 , 1, 0)#
+#
+# get and display the mse#
+mean((yhat - adult.test$income) ^ 2)
+summary(adult.nnet)
+summary(adult.tree)
+summary(adult.lm)
+summary(adult.tree)
+summary(adult.poly)
+names(adult.test)
+adult.nnet = nnet(income~education+workclass+maritalStatus+race+sex+educationNum+hoursPerWeek+nativeCountry+occupation, data=adult.data, size=20, maxit=5000, decay=.001)
+adult.nnet = nnet(income~education+workclass+maritalStatus+race+sex+hoursPerWeek+nativeCountry+occupation, data=adult.data, size=20, maxit=5000, decay=.001)
+adult.nnet = nnet(income~education+maritalStatus+race+sex+hoursPerWeek+nativeCountry+occupation, data=adult.data, size=20, maxit=5000, decay=.001)
+adult.nnet = nnet(income~education+maritalStatus+race+sex+nativeCountry+occupation, data=adult.data, size=20, maxit=5000, decay=.001)
+adult.nnet = nnet(income~education+maritalStatus+race+sex+hoursePerWeek+occupation, data=adult.data, size=20, maxit=5000, decay=.001)
+adult.nnet = nnet(income~education+maritalStatus+race+sex+hoursPerWeek+occupation, data=adult.data, size=20, maxit=5000, decay=.001)
+# do the prediction#
+yhat = predict(adult.nnet,adult.test)#
+#
+# if yhat is greater than .5 it is 1 else 0#
+yhat = ifelse(yhat >= 0.5 , 1, 0)#
+#
+# get and display the mse#
+mean((yhat - adult.test$income) ^ 2)
+adult.data$income[1:40]
+# Read the training data#
+adult.data = read.csv('Data/adult.data.csv', header=F)#
+#
+# Set the column names#
+colnames(adult.data) = c('age','workclass','fnlwgt','education','educationNum','maritalStatus','occupation','relationship','race','sex','capitalGain','capitalLoss','hoursPerWeek','nativeCountry','income')#
+#
+adult.data$income[1:40]
+adult.nnet = nnet(income~education+maritalStatus+race+sex+hoursPerWeek+occupation, data=adult.data, size=5, maxit=5000, decay=.01)#
+#
+#lm(income~education+workclass+maritalStatus+race+sex+poly(educationNum,8)+poly(hoursPerWeek,8), data=adult.data)#
+#
+summary(adult.poly)#
+#
+# do the prediction#
+yhat = predict(adult.nnet,adult.test)#
+#
+# if yhat is greater than .5 it is 1 else 0#
+yhat = ifelse(yhat >= 0.5 , 1, 0)#
+#
+# get and display the mse#
+mean((yhat - adult.test$income) ^ 2)
+############################
+##    SETUP PROJECT     ####
+############################
+#
+# Set the project directory#
+path_to_project = '~/Projects/Income-Prediction-Model'#
+setwd(path_to_project)#
+############################
+## SETUP TRAINING DATA  ####
+############################
+#
+# Read the training data#
+adult.data = read.csv('Data/adult.data.csv', header=F)#
+#
+# Set the column names#
+colnames(adult.data) = c('age','workclass','fnlwgt','education','educationNum','maritalStatus','occupation','relationship','race','sex','capitalGain','capitalLoss','hoursPerWeek','nativeCountry','income')#
+#
+adult.data$income[1:40]#
+#
+dim(adult.data)#
+#
+is.na(adult.data) = adult.data=='?'#
+is.na(adult.data) = adult.data==' ?'#
+adult.data = na.omit(adult.data)#
+#
+# Remove the fnlwgt column#
+adult.data = subset(adult.data, select = -fnlwgt)#
+#
+# Combine workclass groups#
+adult.data$workclass = gsub("Self-emp-inc","Self-emp",adult.data$workclass)#
+adult.data$workclass = gsub("Self-emp-not-inc","Self-emp",adult.data$workclass)#
+adult.data$workclass = gsub("Never-worked","Not-working",adult.data$workclass)#
+adult.data$workclass = gsub("Without-pay","Not-working",adult.data$workclass)#
+adult.data$workclass = gsub("State-gov","Small-gov",adult.data$workclass)#
+adult.data$workclass = gsub("Local-gov","Small-gov",adult.data$workclass)#
+table(adult.data$workclass)#
+#
+# Combine education groups#
+adult.data$education = gsub("Preschool","Dropout",adult.data$education)#
+adult.data$education = gsub("1st-4th","Dropout",adult.data$education)#
+adult.data$education = gsub("5th-6th","Dropout",adult.data$education)#
+adult.data$education = gsub("7th-8th","Dropout",adult.data$education)#
+adult.data$education = gsub("9th","Dropout",adult.data$education)#
+adult.data$education = gsub("10th","Dropout",adult.data$education)#
+adult.data$education = gsub("11th","Dropout",adult.data$education)#
+adult.data$education = gsub("12th","Dropout",adult.data$education)#
+adult.data$education = gsub("HS-grad","HS-grad",adult.data$education)#
+adult.data$education = gsub("Some-college","HS-grad",adult.data$education)#
+adult.data$education = gsub("Assoc-acdm","Assoc",adult.data$education)#
+adult.data$education = gsub("Assoc-voc","Assoc",adult.data$education)#
+table(adult.data$education)#
+#
+# Combine marital status groups#
+adult.data$maritalStatus = gsub("Married-AF-spouse","Married",adult.data$maritalStatus)#
+adult.data$maritalStatus = gsub("Married-civ-spouse","Married",adult.data$maritalStatus)#
+adult.data$maritalStatus = gsub("Married-spouse-absent","Not-married",adult.data$maritalStatus)#
+adult.data$maritalStatus = gsub("Separated","Not-married",adult.data$maritalStatus)#
+adult.data$maritalStatus = gsub("Divorced","Not-married",adult.data$maritalStatus)#
+table(adult.data$maritalStatus)#
+#
+table(adult.data$occupation)#
+# make the income data easier to work with#
+adult.data = within(adult.data, {#
+	income = ifelse(income ==  ' >50K', 1, 0)#
+})#
+# Display first 5 rows to verify everything looks like it should#
+adult.data[0:5,]#
+#
+dim(adult.data)#
+############################
+###   SETUP TEST DATA  #####
+############################
+# Read the test data#
+adult.test = read.csv('Data/adult.test.csv')#
+#
+# Set the test column names#
+colnames(adult.test) = c('age','workclass','fnlwgt','education','educationNum','maritalStatus','occupation','relationship','race','sex','capitalGain','capitalLoss','hoursPerWeek','nativeCountry','income')#
+#
+dim(adult.test)#
+#
+is.na(adult.test) = adult.test=='?'#
+is.na(adult.test) = adult.test==' ?'#
+adult.test = na.omit(adult.test)#
+# Remove the fnlwgt column#
+adult.test = subset(adult.test, select = -fnlwgt)#
+#
+# Combine workclass groups#
+adult.test$workclass = gsub("Self-emp-inc","Self-emp",adult.test$workclass)#
+adult.test$workclass = gsub("Self-emp-not-inc","Self-emp",adult.test$workclass)#
+adult.test$workclass = gsub("Never-worked","Not-working",adult.test$workclass)#
+adult.test$workclass = gsub("Without-pay","Not-working",adult.test$workclass)#
+adult.test$workclass = gsub("State-gov","Small-gov",adult.test$workclass)#
+adult.test$workclass = gsub("Local-gov","Small-gov",adult.test$workclass)#
+table(adult.test$workclass)#
+#
+# Combine education groups#
+adult.test$education = gsub("Preschool","Dropout",adult.test$education)#
+adult.test$education = gsub("1st-4th","Dropout",adult.test$education)#
+adult.test$education = gsub("5th-6th","Dropout",adult.test$education)#
+adult.test$education = gsub("7th-8th","Dropout",adult.test$education)#
+adult.test$education = gsub("9th","Dropout",adult.test$education)#
+adult.test$education = gsub("10th","Dropout",adult.test$education)#
+adult.test$education = gsub("11th","Dropout",adult.test$education)#
+adult.test$education = gsub("12th","Dropout",adult.test$education)#
+adult.test$education = gsub("HS-grad","HS-grad",adult.test$education)#
+adult.test$education = gsub("Some-college","HS-grad",adult.test$education)#
+adult.test$education = gsub("Assoc-acdm","Assoc",adult.test$education)#
+adult.test$education = gsub("Assoc-voc","Assoc",adult.test$education)#
+table(adult.test$education)#
+#
+# Combine marital status groups#
+adult.test$maritalStatus = gsub("Married-AF-spouse","Married",adult.test$maritalStatus)#
+adult.test$maritalStatus = gsub("Married-civ-spouse","Married",adult.test$maritalStatus)#
+adult.test$maritalStatus = gsub("Married-spouse-absent","Not-married",adult.test$maritalStatus)#
+adult.test$maritalStatus = gsub("Separated","Not-married",adult.test$maritalStatus)#
+adult.test$maritalStatus = gsub("Divorced","Not-married",adult.test$maritalStatus)#
+table(adult.test$maritalStatus)#
+#
+table(adult.test$occupation)#
+# make the test data easier to work with#
+adult.test = within(adult.test, {#
+	income = ifelse(income ==  ' >50K.', 1, 0)#
+})#
+#
+# Display first 5 rows to verify everything looks like it should#
+adult.test[0:5,]#
+dim(adult.test)#
+names(adult.test)
+adult.nnet = nnet(income~education+maritalStatus+race+sex+hoursPerWeek+occupation, data=adult.data, size=5, maxit=5000, decay=.01)#
+#
+#lm(income~education+workclass+maritalStatus+race+sex+poly(educationNum,8)+poly(hoursPerWeek,8), data=adult.data)#
+#
+summary(adult.poly)#
+#
+# do the prediction#
+yhat = predict(adult.nnet,adult.test)#
+#
+# if yhat is greater than .5 it is 1 else 0#
+yhat = ifelse(yhat >= 0.5 , 1, 0)#
+#
+# get and display the mse#
+mean((yhat - adult.test$income) ^ 2)
+adult.nnet = nnet(income~education+maritalStatus+race+sex+hoursPerWeek+occupation, data=adult.data, size=5, maxit=5000, decay=.001)#
+#
+#lm(income~education+workclass+maritalStatus+race+sex+poly(educationNum,8)+poly(hoursPerWeek,8), data=adult.data)#
+#
+summary(adult.poly)#
+#
+# do the prediction#
+yhat = predict(adult.nnet,adult.test)#
+#
+# if yhat is greater than .5 it is 1 else 0#
+yhat = ifelse(yhat >= 0.5 , 1, 0)#
+#
+# get and display the mse#
+mean((yhat - adult.test$income) ^ 2)
+library(nnet)#
+adult.nnet = nnet(income~education, data=adult.data, size=5, maxit=5000, decay=.001)#
+#
+#lm(income~education+workclass+maritalStatus+race+sex+poly(educationNum,8)+poly(hoursPerWeek,8), data=adult.data)#
+#
+summary(adult.poly)#
+#
+# do the prediction#
+yhat = predict(adult.nnet,adult.test)#
+#
+# if yhat is greater than .5 it is 1 else 0#
+yhat = ifelse(yhat >= 0.5 , 1, 0)#
+#
+# get and display the mse#
+mean((yhat - adult.test$income) ^ 2)
+# Read the training data#
+adult.data = read.csv('Data/adult.data.csv', header=F)#
+#
+# Set the column names#
+colnames(adult.data) = c('age','workclass','fnlwgt','education','educationNum','maritalStatus','occupation','relationship','race','sex','capitalGain','capitalLoss','hoursPerWeek','nativeCountry','income')#
+#
+adult.data$income[1:40]#
+#
+dim(adult.data)
+dim(adult.data)#
+#
+is.na(adult.data) = adult.data=='?'#
+is.na(adult.data) = adult.data==' ?'#
+adult.data = na.omit(adult.data)#
+#
+# Remove the fnlwgt column#
+adult.data = subset(adult.data, select = -fnlwgt)
+# make the income data easier to work with#
+adult.data = within(adult.data, {#
+	income = ifelse(income ==  ' >50K', 1, 0)#
+})
+# Read the test data#
+adult.test = read.csv('Data/adult.test.csv')#
+#
+# Set the test column names#
+colnames(adult.test) = c('age','workclass','fnlwgt','education','educationNum','maritalStatus','occupation','relationship','race','sex','capitalGain','capitalLoss','hoursPerWeek','nativeCountry','income')#
+#
+dim(adult.test)#
+#
+is.na(adult.test) = adult.test=='?'#
+is.na(adult.test) = adult.test==' ?'#
+adult.test = na.omit(adult.test)#
+# Remove the fnlwgt column#
+adult.test = subset(adult.test, select = -fnlwgt)
+# make the test data easier to work with#
+adult.test = within(adult.test, {#
+	income = ifelse(income ==  ' >50K.', 1, 0)#
+})#
+#
+# Display first 5 rows to verify everything looks like it should#
+adult.test[0:5,]#
+dim(adult.test)#
+names(adult.test)
+library(nnet)#
+adult.nnet = nnet(income~education, data=adult.data, size=5, maxit=5000, decay=.001)#
+#
+#lm(income~education+workclass+maritalStatus+race+sex+poly(educationNum,8)+poly(hoursPerWeek,8), data=adult.data)#
+#
+summary(adult.poly)#
+#
+# do the prediction#
+yhat = predict(adult.nnet,adult.test)#
+#
+# if yhat is greater than .5 it is 1 else 0#
+yhat = ifelse(yhat >= 0.5 , 1, 0)#
+#
+# get and display the mse#
+mean((yhat - adult.test$income) ^ 2)
+library(nnet)#
+adult.nnet = nnet(income~maritalStatus, data=adult.data, size=5, maxit=5000, decay=.001)#
+#
+#lm(income~education+workclass+maritalStatus+race+sex+poly(educationNum,8)+poly(hoursPerWeek,8), data=adult.data)#
+#
+summary(adult.poly)#
+#
+# do the prediction#
+yhat = predict(adult.nnet,adult.test)#
+#
+# if yhat is greater than .5 it is 1 else 0#
+yhat = ifelse(yhat >= 0.5 , 1, 0)#
+#
+# get and display the mse#
+mean((yhat - adult.test$income) ^ 2)
+library(nnet)#
+adult.nnet = nnet(income~educationNum, data=adult.data, size=5, maxit=5000, decay=.001)#
+#
+#lm(income~education+workclass+maritalStatus+race+sex+poly(educationNum,8)+poly(hoursPerWeek,8), data=adult.data)#
+#
+summary(adult.poly)#
+#
+# do the prediction#
+yhat = predict(adult.nnet,adult.test)#
+#
+# if yhat is greater than .5 it is 1 else 0#
+yhat = ifelse(yhat >= 0.5 , 1, 0)#
+#
+# get and display the mse#
+mean((yhat - adult.test$income) ^ 2)
+library(nnet)#
+adult.nnet = nnet(income~hoursPerWeek, data=adult.data, size=5, maxit=5000, decay=.001)#
+#
+#lm(income~education+workclass+maritalStatus+race+sex+poly(educationNum,8)+poly(hoursPerWeek,8), data=adult.data)#
+#
+summary(adult.poly)#
+#
+# do the prediction#
+yhat = predict(adult.nnet,adult.test)#
+#
+# if yhat is greater than .5 it is 1 else 0#
+yhat = ifelse(yhat >= 0.5 , 1, 0)#
+#
+# get and display the mse#
+mean((yhat - adult.test$income) ^ 2)
+library(nnet)#
+adult.nnet = nnet(income~educationNum, data=adult.data, size=5, maxit=10000, decay=.001)#
+#
+#lm(income~education+workclass+maritalStatus+race+sex+poly(educationNum,8)+poly(hoursPerWeek,8), data=adult.data)#
+#
+summary(adult.poly)#
+#
+# do the prediction#
+yhat = predict(adult.nnet,adult.test)#
+#
+# if yhat is greater than .5 it is 1 else 0#
+yhat = ifelse(yhat >= 0.5 , 1, 0)#
+#
+# get and display the mse#
+mean((yhat - adult.test$income) ^ 2)
+library(nnet)#
+adult.nnet = nnet(income~educationNum, data=adult.data, size=15, maxit=10000, decay=.001)#
+#
+#lm(income~education+workclass+maritalStatus+race+sex+poly(educationNum,8)+poly(hoursPerWeek,8), data=adult.data)#
+#
+summary(adult.poly)#
+#
+# do the prediction#
+yhat = predict(adult.nnet,adult.test)#
+#
+# if yhat is greater than .5 it is 1 else 0#
+yhat = ifelse(yhat >= 0.5 , 1, 0)#
+#
+# get and display the mse#
+mean((yhat - adult.test$income) ^ 2)
+library(nnet)#
+adult.nnet = nnet(income~educationNum, data=adult.data, size=15, maxit=10000, decay=.0001)#
+#
+#lm(income~education+workclass+maritalStatus+race+sex+poly(educationNum,8)+poly(hoursPerWeek,8), data=adult.data)#
+#
+summary(adult.poly)#
+#
+# do the prediction#
+yhat = predict(adult.nnet,adult.test)#
+#
+# if yhat is greater than .5 it is 1 else 0#
+yhat = ifelse(yhat >= 0.5 , 1, 0)#
+#
+# get and display the mse#
+mean((yhat - adult.test$income) ^ 2)
+adult.nnet = nnet(income~educationNum, data=adult.data, size=15, maxit=10000, decay=.1)#
+#
+#lm(income~education+workclass+maritalStatus+race+sex+poly(educationNum,8)+poly(hoursPerWeek,8), data=adult.data)#
+#
+summary(adult.poly)#
+#
+# do the prediction#
+yhat = predict(adult.nnet,adult.test)#
+#
+# if yhat is greater than .5 it is 1 else 0#
+yhat = ifelse(yhat >= 0.5 , 1, 0)#
+#
+# get and display the mse#
+mean((yhat - adult.test$income) ^ 2)
+adult.lda=lda(income~age+education+capitalGain+capitalLoss+hoursPerWeek+sex+race+workclass+maritalStatus+relationship+occupation,data=adult.data)
+library(MASS)
+adult.lda=lda(income~age+education+capitalGain+capitalLoss+hoursPerWeek+sex+race+workclass+maritalStatus+relationship+occupation,data=adult.data)
+############################
+##    SETUP PROJECT     ####
+############################
+#
+# Set the project directory#
+path_to_project = '~/Projects/Income-Prediction-Model'#
+setwd(path_to_project)#
+############################
+## SETUP TRAINING DATA  ####
+############################
+#
+# Read the training data#
+adult.data = read.csv('Data/adult.data.csv', header=F)#
+#
+# Set the column names#
+colnames(adult.data) = c('age','workclass','fnlwgt','education','educationNum','maritalStatus','occupation','relationship','race','sex','capitalGain','capitalLoss','hoursPerWeek','nativeCountry','income')#
+#
+adult.data$income[1:40]#
+#
+dim(adult.data)#
+#
+is.na(adult.data) = adult.data=='?'#
+is.na(adult.data) = adult.data==' ?'#
+adult.data = na.omit(adult.data)#
+#
+# Remove the fnlwgt column#
+adult.data = subset(adult.data, select = -fnlwgt)#
+#
+# Combine workclass groups#
+adult.data$workclass = gsub("Self-emp-inc","Self-emp",adult.data$workclass)#
+adult.data$workclass = gsub("Self-emp-not-inc","Self-emp",adult.data$workclass)#
+adult.data$workclass = gsub("Never-worked","Not-working",adult.data$workclass)#
+adult.data$workclass = gsub("Without-pay","Not-working",adult.data$workclass)#
+adult.data$workclass = gsub("State-gov","Small-gov",adult.data$workclass)#
+adult.data$workclass = gsub("Local-gov","Small-gov",adult.data$workclass)#
+table(adult.data$workclass)#
+#
+# Combine education groups#
+adult.data$education = gsub("Preschool","Dropout",adult.data$education)#
+adult.data$education = gsub("1st-4th","Dropout",adult.data$education)#
+adult.data$education = gsub("5th-6th","Dropout",adult.data$education)#
+adult.data$education = gsub("7th-8th","Dropout",adult.data$education)#
+adult.data$education = gsub("9th","Dropout",adult.data$education)#
+adult.data$education = gsub("10th","Dropout",adult.data$education)#
+adult.data$education = gsub("11th","Dropout",adult.data$education)#
+adult.data$education = gsub("12th","Dropout",adult.data$education)#
+adult.data$education = gsub("HS-grad","HS-grad",adult.data$education)#
+adult.data$education = gsub("Some-college","HS-grad",adult.data$education)#
+adult.data$education = gsub("Assoc-acdm","Assoc",adult.data$education)#
+adult.data$education = gsub("Assoc-voc","Assoc",adult.data$education)#
+table(adult.data$education)#
+#
+# Combine marital status groups#
+adult.data$maritalStatus = gsub("Married-AF-spouse","Married",adult.data$maritalStatus)#
+adult.data$maritalStatus = gsub("Married-civ-spouse","Married",adult.data$maritalStatus)#
+adult.data$maritalStatus = gsub("Married-spouse-absent","Not-married",adult.data$maritalStatus)#
+adult.data$maritalStatus = gsub("Separated","Not-married",adult.data$maritalStatus)#
+adult.data$maritalStatus = gsub("Divorced","Not-married",adult.data$maritalStatus)#
+table(adult.data$maritalStatus)#
+#
+table(adult.data$occupation)#
+# make the income data easier to work with#
+adult.data = within(adult.data, {#
+	income = ifelse(income ==  ' >50K', 1, 0)#
+})#
+# Display first 5 rows to verify everything looks like it should#
+adult.data[0:5,]#
+#
+dim(adult.data)#
+############################
+###   SETUP TEST DATA  #####
+############################
+# Read the test data#
+adult.test = read.csv('Data/adult.test.csv')#
+#
+# Set the test column names#
+colnames(adult.test) = c('age','workclass','fnlwgt','education','educationNum','maritalStatus','occupation','relationship','race','sex','capitalGain','capitalLoss','hoursPerWeek','nativeCountry','income')#
+#
+dim(adult.test)#
+#
+is.na(adult.test) = adult.test=='?'#
+is.na(adult.test) = adult.test==' ?'#
+adult.test = na.omit(adult.test)#
+# Remove the fnlwgt column#
+adult.test = subset(adult.test, select = -fnlwgt)#
+#
+# Combine workclass groups#
+adult.test$workclass = gsub("Self-emp-inc","Self-emp",adult.test$workclass)#
+adult.test$workclass = gsub("Self-emp-not-inc","Self-emp",adult.test$workclass)#
+adult.test$workclass = gsub("Never-worked","Not-working",adult.test$workclass)#
+adult.test$workclass = gsub("Without-pay","Not-working",adult.test$workclass)#
+adult.test$workclass = gsub("State-gov","Small-gov",adult.test$workclass)#
+adult.test$workclass = gsub("Local-gov","Small-gov",adult.test$workclass)#
+table(adult.test$workclass)#
+#
+# Combine education groups#
+adult.test$education = gsub("Preschool","Dropout",adult.test$education)#
+adult.test$education = gsub("1st-4th","Dropout",adult.test$education)#
+adult.test$education = gsub("5th-6th","Dropout",adult.test$education)#
+adult.test$education = gsub("7th-8th","Dropout",adult.test$education)#
+adult.test$education = gsub("9th","Dropout",adult.test$education)#
+adult.test$education = gsub("10th","Dropout",adult.test$education)#
+adult.test$education = gsub("11th","Dropout",adult.test$education)#
+adult.test$education = gsub("12th","Dropout",adult.test$education)#
+adult.test$education = gsub("HS-grad","HS-grad",adult.test$education)#
+adult.test$education = gsub("Some-college","HS-grad",adult.test$education)#
+adult.test$education = gsub("Assoc-acdm","Assoc",adult.test$education)#
+adult.test$education = gsub("Assoc-voc","Assoc",adult.test$education)#
+table(adult.test$education)#
+#
+# Combine marital status groups#
+adult.test$maritalStatus = gsub("Married-AF-spouse","Married",adult.test$maritalStatus)#
+adult.test$maritalStatus = gsub("Married-civ-spouse","Married",adult.test$maritalStatus)#
+adult.test$maritalStatus = gsub("Married-spouse-absent","Not-married",adult.test$maritalStatus)#
+adult.test$maritalStatus = gsub("Separated","Not-married",adult.test$maritalStatus)#
+adult.test$maritalStatus = gsub("Divorced","Not-married",adult.test$maritalStatus)#
+table(adult.test$maritalStatus)#
+#
+table(adult.test$occupation)#
+# make the test data easier to work with#
+adult.test = within(adult.test, {#
+	income = ifelse(income ==  ' >50K.', 1, 0)#
+})#
+#
+# Display first 5 rows to verify everything looks like it should#
+adult.test[0:5,]#
+dim(adult.test)#
+names(adult.test)
+adult.lda=lda(income~age+education+capitalGain+capitalLoss+hoursPerWeek+sex+race+workclass+maritalStatus+relationship+occupation,data=adult.data)
+# do the prediction#
+yhat = predict(adult.lda,adult.data)#
+#
+# if yhat is greater than .5 it is 1 else 0#
+yhat = ifelse(yhat >= 0.5 , 1, 0)#
+#
+# get and display the mse#
+mean((yhat - adult.test$income) ^ 2)
+yhat = predict(adult.lda,adult.data)
+yhat = ifelse(yhat >= 0.5 , 1, 0)
+yhat = predict(adult.lda,adult.test)
+yhat = ifelse(yhat >= 0.5 , 1, 0)
+yhat
+yhat = predict(adult.lda,adult.test)
+summary(adult.lda)
+yhat = ifelse(yhat >= 0.5 , 1, 0)
+adult.lda=lda(income~age+education+capitalGain+capitalLoss+hoursPerWeek+sex+race+workclass+maritalStatus+relationship+occupation,data=adult.data)
+adult.lda=lda(income~age+education,data=adult.data)
+yhat = predict(adult.lda,adult.test)
+yhat
+yhat = ifelse(yhat > 0 , 1, 0)
+glm.fit=glm(adult.data$income~age+education+capitalGain+capitalLoss+hoursPerWeek+sex#
+        	+race+workclass+maritalStatus+relationship+occupation,data=adult.data,family= binomial)#
+#
+glm.probs=predict(glm.fit,type="response")#
+#
+glm.pred=rep(0,length(income))#
+glm.pred[glm.probs> .39]=1#
+incomeDirection =  rep(0, length(income))#
+incomeDirection[income == 1] = 1#
+incomeDirection[1:60]#
+table(glm.pred,incomeDirection)#
+mean(glm.pred!=incomeDirection)
+glm.fit=glm(adult.data$income~age+education+capitalGain+capitalLoss+hoursPerWeek+sex#
+        	+race+workclass+maritalStatus+relationship+occupation,data=adult.data,family= binomial)#
+#
+glm.probs=predict(glm.fit,type="response")#
+#
+glm.pred=rep(0,length(income))#
+glm.pred[glm.probs> .39]=1#
+incomeDirection =  rep(0, length(income))#
+incomeDirection[income == 1] = 1#
+incomeDirection[1:60]#
+table(glm.pred,incomeDirection)#
+mean(glm.pred!=incomeDirection)
+adult.glm = glm(income~educationNum, data=adult.data)
+yhat = predict(adult.glm,adult.test)
+yhat = ifelse(yhat > 0 , 1, 0)
+mean((yhat - adult.test$income) ^ 2)
+adult.glm = glm(income~educationNum, data=adult.data)#
+#
+#lm(income~education+workclass+maritalStatus+race+sex+poly(educationNum,8)+poly(hoursPerWeek,8), data=adult.data)#
+#
+summary(adult.poly)#
+#
+# do the prediction#
+yhat = predict(adult.glm,adult.test)#
+#
+summary(adult.lda)#
+#
+yhat#
+#
+# if yhat is greater than .5 it is 1 else 0#
+yhat = ifelse(yhat >= .5, 1, 0)#
+#
+# get and display the mse#
+mean((yhat - adult.test$income) ^ 2)
+adult.glm = glm(income~educationNum + education, data=adult.data)#
+#
+#lm(income~education+workclass+maritalStatus+race+sex+poly(educationNum,8)+poly(hoursPerWeek,8), data=adult.data)#
+#
+summary(adult.poly)#
+#
+# do the prediction#
+yhat = predict(adult.glm,adult.test)#
+#
+summary(adult.lda)#
+#
+yhat#
+#
+# if yhat is greater than .5 it is 1 else 0#
+yhat = ifelse(yhat >= .5, 1, 0)#
+#
+# get and display the mse#
+mean((yhat - adult.test$income) ^ 2)
+adult.glm = glm(income~age+education+capitalGain+capitalLoss+hoursPerWeek+sex#
+        	+race+workclass+maritalStatus+relationship+occupation,data=adult.data,family= binomial)#
+#
+#lm(income~education+workclass+maritalStatus+race+sex+poly(educationNum,8)+poly(hoursPerWeek,8), data=adult.data)#
+#
+summary(adult.poly)#
+#
+# do the prediction#
+yhat = predict(adult.glm,adult.test)#
+#
+summary(adult.lda)#
+#
+yhat#
+#
+# if yhat is greater than .5 it is 1 else 0#
+yhat = ifelse(yhat >= .5, 1, 0)#
+#
+# get and display the mse#
+mean((yhat - adult.test$income) ^ 2)
+adult.glm = glm(income~age+education+hoursPerWeek+sex#
+        	+race+workclass+maritalStatus+relationship+occupation,data=adult.data,family= binomial)#
+#
+#lm(income~education+workclass+maritalStatus+race+sex+poly(educationNum,8)+poly(hoursPerWeek,8), data=adult.data)#
+#
+summary(adult.poly)#
+#
+# do the prediction#
+yhat = predict(adult.glm,adult.test)#
+#
+summary(adult.lda)#
+#
+yhat#
+#
+# if yhat is greater than .5 it is 1 else 0#
+yhat = ifelse(yhat >= .5, 1, 0)#
+#
+# get and display the mse#
+mean((yhat - adult.test$income) ^ 2)
+adult.glm = glm(income~capitalGain+capitalLoss,data=adult.data,family= binomial)#
+#
+#lm(income~education+workclass+maritalStatus+race+sex+poly(educationNum,8)+poly(hoursPerWeek,8), data=adult.data)#
+#
+summary(adult.poly)#
+#
+# do the prediction#
+yhat = predict(adult.glm,adult.test)#
+#
+summary(adult.lda)#
+#
+yhat#
+#
+# if yhat is greater than .5 it is 1 else 0#
+yhat = ifelse(yhat >= .5, 1, 0)#
+#
+# get and display the mse#
+mean((yhat - adult.test$income) ^ 2)
+adult.glm = glm(income~capitalGain,data=adult.data,family= binomial)#
+#
+#lm(income~education+workclass+maritalStatus+race+sex+poly(educationNum,8)+poly(hoursPerWeek,8), data=adult.data)#
+#
+summary(adult.poly)#
+#
+# do the prediction#
+yhat = predict(adult.glm,adult.test)#
+#
+summary(adult.lda)#
+#
+yhat#
+#
+# if yhat is greater than .5 it is 1 else 0#
+yhat = ifelse(yhat >= .5, 1, 0)#
+#
+# get and display the mse#
+mean((yhat - adult.test$income) ^ 2)
+adult.glm = glm(income~age+education+capitalGain+capitalLoss+hoursPerWeek+sex#
+        	+race+workclass+maritalStatus+relationship+occupation,data=adult.data,family= binomial)#
+#
+#lm(income~education+workclass+maritalStatus+race+sex+poly(educationNum,8)+poly(hoursPerWeek,8), data=adult.data)#
+#
+summary(adult.poly)#
+#
+# do the prediction#
+yhat = predict(adult.glm,adult.test)#
+#
+summary(adult.lda)#
+#
+yhat#
+#
+# if yhat is greater than .5 it is 1 else 0#
+yhat = ifelse(yhat >= .45, 1, 0)#
+#
+# get and display the mse#
+mean((yhat - adult.test$income) ^ 2)
+adult.glm = glm(income~age+education+capitalGain+capitalLoss+hoursPerWeek+sex#
+        	+race+workclass+maritalStatus+relationship+occupation,data=adult.data,family= binomial)#
+#
+#lm(income~education+workclass+maritalStatus+race+sex+poly(educationNum,8)+poly(hoursPerWeek,8), data=adult.data)#
+#
+summary(adult.poly)#
+#
+# do the prediction#
+yhat = predict(adult.glm,adult.test)#
+#
+summary(adult.lda)#
+#
+yhat#
+#
+# if yhat is greater than .5 it is 1 else 0#
+yhat = ifelse(yhat >= .4, 1, 0)#
+#
+# get and display the mse#
+mean((yhat - adult.test$income) ^ 2)
+adult.glm = glm(income~age+education+capitalGain+capitalLoss+hoursPerWeek+sex#
+        	+race+workclass+maritalStatus+relationship+occupation,data=adult.data,family= binomial)#
+#
+#lm(income~education+workclass+maritalStatus+race+sex+poly(educationNum,8)+poly(hoursPerWeek,8), data=adult.data)#
+#
+summary(adult.poly)#
+#
+# do the prediction#
+yhat = predict(adult.glm,adult.test)#
+#
+# if yhat is greater than .5 it is 1 else 0#
+yhat = ifelse(yhat >= .4, 1, 0)#
+#
+# get and display the mse#
+mean((yhat - adult.test$income) ^ 2)
+adult.glm = glm(income~age+education+capitalGain+capitalLoss+hoursPerWeek+sex#
+        	+race+workclass+maritalStatus+relationship+occupation,data=adult.data,family= binomil)#
+#
+# do the prediction#
+yhat = predict(adult.glm,adult.test)#
+#
+# if yhat is greater than .5 it is 1 else 0#
+yhat = ifelse(yhat >= .4, 1, 0)#
+#
+# get and display the mse#
+mean((yhat - adult.test$income) ^ 2)
+adult.glm = glm(income~age+education+capitalGain+capitalLoss+hoursPerWeek+sex#
+        	+race+workclass+maritalStatus+relationship+occupation,data=adult.data,family= binomial)#
+#
+# do the prediction#
+yhat = predict(adult.glm,adult.test)#
+#
+# if yhat is greater than .5 it is 1 else 0#
+yhat = ifelse(yhat >= .4, 1, 0)#
+#
+# get and display the mse#
+mean((yhat - adult.test$income) ^ 2)
+adult.glm = glm(income~age+education+capitalGain+capitalLoss+hoursPerWeek+sex#
+        	+race+workclass+maritalStatus+relationship+occupation,data=adult.data,family= binomial)#
+#
+# do the prediction#
+yhat = predict(adult.glm,adult.test)#
+#
+# if yhat is greater than .5 it is 1 else 0#
+yhat = ifelse(yhat >= .55, 1, 0)#
+#
+# get and display the mse#
+mean((yhat - adult.test$income) ^ 2)
+adult.glm = glm(income~age+education+capitalGain+capitalLoss+hoursPerWeek+sex#
+        	+race+workclass+maritalStatus+relationship+occupation,data=adult.data,family= binomial)#
+#
+# do the prediction#
+yhat = predict(adult.glm,adult.test)#
+#
+# if yhat is greater than .5 it is 1 else 0#
+yhat = ifelse(yhat >= .48, 1, 0)#
+#
+# get and display the mse#
+mean((yhat - adult.test$income) ^ 2)
+adult.glm = glm(income~age+education+capitalGain+capitalLoss+hoursPerWeek+sex#
+        	+race+workclass+maritalStatus+relationship+occupation,data=adult.data,family= binomial)#
+#
+# do the prediction#
+yhat = predict(adult.glm,adult.test)#
+#
+# if yhat is greater than .5 it is 1 else 0#
+yhat = ifelse(yhat >= .5, 1, 0)#
+#
+# get and display the mse#
+mean((yhat - adult.test$income) ^ 2)
+adult.glm = glm(income~age+education+capitalGain+capitalLoss+hoursPerWeek+sex#
+        	+race+workclass+maritalStatus+relationship+occupation,data=adult.data,family= binomial)#
+#
+# do the prediction#
+yhat = predict(adult.glm,adult.test)#
+#
+# if yhat is greater than .5 it is 1 else 0#
+yhat = ifelse(yhat >= .40, 1, 0)#
+#
+# get and display the mse#
+mean((yhat - adult.test$income) ^ 2)
+adult.glm = glm(income~age+education+capitalGain+capitalLoss+hoursPerWeek+sex#
+        	+race+workclass+maritalStatus+relationship+occupation,data=adult.data,family= binomial)#
+#
+# do the prediction#
+yhat = predict(adult.glm,adult.test)#
+#
+# if yhat is greater than .5 it is 1 else 0#
+yhat = ifelse(yhat >= .20, 1, 0)#
+#
+# get and display the mse#
+mean((yhat - adult.test$income) ^ 2)
+adult.glm = glm(income~age+education+capitalGain+capitalLoss+hoursPerWeek+sex#
+        	+race+workclass+maritalStatus+relationship+occupation,data=adult.data,family= binomial)#
+#
+# do the prediction#
+yhat = predict(adult.glm,adult.test)#
+#
+# if yhat is greater than .5 it is 1 else 0#
+yhat = ifelse(yhat >= .10, 1, 0)#
+#
+# get and display the mse#
+mean((yhat - adult.test$income) ^ 2)
+adult.glm = glm(income~age+education+capitalGain+capitalLoss+hoursPerWeek+sex#
+        	+race+workclass+maritalStatus+relationship+occupation,data=adult.data,family= binomial)#
+#
+# do the prediction#
+yhat = predict(adult.glm,adult.test)#
+#
+# if yhat is greater than .5 it is 1 else 0#
+yhat = ifelse(yhat >= .01, 1, 0)#
+#
+# get and display the mse#
+mean((yhat - adult.test$income) ^ 2)
+adult.glm = glm(income~age+education+capitalGain+capitalLoss+hoursPerWeek+sex#
+        	+race+workclass+maritalStatus+relationship+occupation,data=adult.data,family= binomial)#
+#
+# do the prediction#
+yhat = predict(adult.glm,adult.test)#
+#
+# if yhat is greater than .5 it is 1 else 0#
+yhat = ifelse(yhat >= .05, 1, 0)#
+#
+# get and display the mse#
+mean((yhat - adult.test$income) ^ 2)
+yhat
+adult.glm = glm(income~age+education+capitalGain+capitalLoss+hoursPerWeek+sex#
+        	+race+workclass+maritalStatus+relationship+occupation,data=adult.data,family= binomial)#
+#
+# do the prediction#
+yhat = predict(adult.glm,adult.test)#
+#
+# get and display the mse#
+mean((yhat - adult.test$income) ^ 2)
+adult.glm = glm(income~age+education+capitalGain+capitalLoss+hoursPerWeek+sex#
+        	+race+workclass+maritalStatus+relationship+occupation,data=adult.data,family= binomial)#
+#
+# do the prediction#
+yhat = predict(adult.glm,adult.test)#
+#
+yhat
+adult.glm = glm(income~age+education+capitalGain+capitalLoss+hoursPerWeek+sex#
+        	+race+workclass+maritalStatus+relationship+occupation,data=adult.data,family= binomial)#
+#
+# do the prediction#
+yhat = predict(adult.glm,adult.test)#
+#
+# if yhat is greater than .5 it is 1 else 0#
+yhat = ifelse(yhat >= 0, 1, 0)#
+#
+# get and display the mse#
+mean((yhat - adult.test$income) ^ 2)
+adult.glm = glm(income~age+education+capitalGain+capitalLoss+hoursPerWeek+sex#
+        	+race+workclass+maritalStatus+relationship+occupation,data=adult.data,family= binomial)#
+#
+# do the prediction#
+yhat = predict(adult.glm,adult.test)#
+#
+# if yhat is greater than .5 it is 1 else 0#
+yhat = ifelse(yhat >= -.1, 1, 0)#
+#
+# get and display the mse#
+mean((yhat - adult.test$income) ^ 2)
+adult.glm = glm(income~age+education+capitalGain+capitalLoss+hoursPerWeek+sex#
+        	+race+workclass+maritalStatus+relationship+occupation,data=adult.data,family= binomial)#
+#
+# do the prediction#
+yhat = predict(adult.glm,adult.test)#
+#
+# if yhat is greater than .5 it is 1 else 0#
+yhat = ifelse(yhat >= 0, 1, 0)#
+#
+# get and display the mse#
+mean((yhat - adult.test$income) ^ 2)
